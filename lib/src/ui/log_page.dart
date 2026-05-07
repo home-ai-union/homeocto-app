@@ -238,7 +238,7 @@ class _LogPageState extends State<LogPage> {
         // Use platform MethodChannel to write via MediaStore
         try {
           final bytes = Uint8List.fromList(content.codeUnits);
-          final channel = MethodChannel('com.sipeed.picoclaw/picoclaw');
+          final channel = MethodChannel('com.homeai.homeocto/picoclaw');
           final res = await channel.invokeMethod<String>('saveToDownloads', {
             'filename': filename,
             'bytes': bytes,
@@ -297,7 +297,7 @@ class _LogPageState extends State<LogPage> {
           // We received a content:// URI (Android MediaStore) — share via XFile with URI
           try {
             // Try to copy content URI to app cache so share_plus can access it reliably
-            final channel = MethodChannel('com.sipeed.picoclaw/picoclaw');
+            final channel = MethodChannel('com.homeai.homeocto/picoclaw');
             String? cachePath;
             try {
               cachePath = await channel.invokeMethod<String>(

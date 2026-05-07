@@ -5,7 +5,7 @@ import 'package:homeocto_app/src/core/picoclaw_channel.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const channel = MethodChannel('com.sipeed.picoclaw/picoclaw');
+  const channel = MethodChannel('com.homeai.homeocto/picoclaw');
 
   tearDown(() async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

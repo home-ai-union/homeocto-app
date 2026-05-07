@@ -11,7 +11,7 @@ import android.provider.Settings
 import android.util.Log
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
-import com.homeai.homeocto.service.HomeOctoService
+import com.homeai.homeocto.service.PicoClawService
 import com.homeai.homeocto.util.HealthChecker
 import java.io.File
 import java.util.concurrent.Executor
@@ -20,8 +20,8 @@ import java.util.concurrent.Executor
  * Flutter MethodChannel 桥接层，将 Kotlin 原生功能暴露给 Dart 端。
  *
  * 支持的方法：
- * - startService: 启动 HomeOcto 前台服务
- * - stopService: 停止 HomeOcto 前台服务
+ * - startService: 启动 PicoClaw 前台服务
+ * - stopService: 停止 PicoClaw 前台服务
  * - getServiceStatus: 获取服务状态（isRunning, pid, lastLog）
  * - checkHealth: 检查 /health 端点
  * - getConfig: 读取 config.json 内容
@@ -31,14 +31,14 @@ import java.util.concurrent.Executor
  * - getAutoStart: 获取开机自启设置
  * - getWebPort: 获取 Web Console 端口号
  */
-class HomeOctoMethodChannel(
+class PicoClawMethodChannel(
     private val context: Context,
     flutterEngine: FlutterEngine
 ) {
     companion object {
-        private const val TAG = "HomeOctoMethodChannel"
-        private const val CHANNEL_NAME = "com.homeai.homeocto/homeocto"
-        private const val PREF_NAME = "homeocto_prefs"
+        private const val TAG = "PicoClawMethodChannel"
+        private const val CHANNEL_NAME = "com.homeai.homeocto/picoclaw"
+        private const val PREF_NAME = "picoclaw_prefs"
         private const val KEY_AUTO_START = "auto_start"
     }
 
@@ -90,7 +90,7 @@ class HomeOctoMethodChannel(
                         val prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                         prefs.edit().putBoolean("public_mode", publicMode).apply()
                         Log.d(TAG, "Starting service with publicMode=$publicMode (args: $args)")
-                        HomeOctoService.start(context, publicMode)
+                        PicoClawService.start(context, publicMode)
                         result.success(true)
                     } catch (e: Exception) {
                         result.error("START_FAILED", e.message, null)
@@ -106,7 +106,7 @@ class HomeOctoMethodChannel(
                 }
                 "stopService" -> {
                     try {
-                        HomeOctoService.stop(context)
+                        PicoClawService.stop(context)
                         result.success(true)
                     } catch (e: Exception) {
                         result.error("STOP_FAILED", e.message, null)
@@ -114,9 +114,9 @@ class HomeOctoMethodChannel(
                 }
                 "getServiceStatus" -> {
                     result.success(mapOf(
-                        "isRunning" to HomeOctoService.isRunning,
-                        "pid" to HomeOctoService.processId,
-                        "lastLog" to HomeOctoService.lastLog
+                        "isRunning" to PicoClawService.isRunning,
+                        "pid" to PicoClawService.processId,
+                        "lastLog" to PicoClawService.lastLog
                     ))
                 }
                 "checkHealth" -> {
@@ -144,7 +144,7 @@ class HomeOctoMethodChannel(
                 }
                 "getConfig" -> {
                     try {
-                        val configFile = File(context.filesDir, "homeocto/config.json")
+                        val configFile = File(context.filesDir, "picoclaw/config.json")
                         if (configFile.exists()) {
                             result.success(configFile.readText())
                         } else {
@@ -157,7 +157,7 @@ class HomeOctoMethodChannel(
                 "saveConfig" -> {
                     try {
                         val content = call.argument<String>("content") ?: ""
-                        val configFile = File(context.filesDir, "homeocto/config.json")
+                        val configFile = File(context.filesDir, "picoclaw/config.json")
                         configFile.parentFile?.mkdirs()
                         configFile.writeText(content)
                         result.success(true)
@@ -166,7 +166,7 @@ class HomeOctoMethodChannel(
                     }
                 }
                 "getFullLog" -> {
-                    result.success(HomeOctoService.lastLog)
+                    result.success(PicoClawService.lastLog)
                 }
                 "setAutoStart" -> {
                     try {
@@ -190,7 +190,7 @@ class HomeOctoMethodChannel(
                     Thread {
                         val mainExecutor = getMainExecutor()
                         try {
-                            val version = HomeOctoService.readCoreVersion(context)
+                            val version = PicoClawService.readCoreVersion(context)
                             mainExecutor.execute {
                                 result.success(version)
                             }
@@ -203,11 +203,11 @@ class HomeOctoMethodChannel(
                     }.start()
                 }
                 "getConfigPath" -> {
-                    val configFile = File(context.filesDir, "homeocto/config.json")
+                    val configFile = File(context.filesDir, "picoclaw/config.json")
                     result.success(configFile.absolutePath)
                 }
                 "getHomePath" -> {
-                    result.success(HomeOctoService.getWorkspacePath(context))
+                    result.success(PicoClawService.getWorkspacePath(context))
                 }
                 "isStorageManagerGranted" -> {
                     val granted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -239,7 +239,7 @@ class HomeOctoMethodChannel(
                     }
                 }
                 "getPicoToken" -> {
-                    result.success(HomeOctoService.PICO_TOKEN)
+                    result.success(PicoClawService.PICO_TOKEN)
                 }
                 "getSafeDeviceInfo" -> {
                     val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -268,16 +268,16 @@ class HomeOctoMethodChannel(
                     }
                 }
                 "uploadUmengDeviceReport" -> {
-                    android.util.Log.d("HomeOctoChannel", "=== uploadUmengDeviceReport called ===")
+                    android.util.Log.d("PicoClawChannel", "=== uploadUmengDeviceReport called ===")
                     try {
                         val payload = call.arguments<Map<String, Any?>>() ?: emptyMap()
-                        android.util.Log.d("HomeOctoChannel", "Payload received with ${payload.size} fields")
+                        android.util.Log.d("PicoClawChannel", "Payload received with ${payload.size} fields")
                         val reportResult = AnalyticsReporter.uploadDeviceReport(context, payload)
-                        android.util.Log.d("HomeOctoChannel", "AnalyticsReporter returned: success=${reportResult["success"]}, message=${reportResult["message"]}")
+                        android.util.Log.d("PicoClawChannel", "AnalyticsReporter returned: success=${reportResult["success"]}, message=${reportResult["message"]}")
                         result.success(reportResult)
-                        android.util.Log.d("HomeOctoChannel", "=== uploadUmengDeviceReport completed ===")
+                        android.util.Log.d("PicoClawChannel", "=== uploadUmengDeviceReport completed ===")
                     } catch (e: Exception) {
-                        android.util.Log.e("HomeOctoChannel", "uploadUmengDeviceReport failed: ${e.message}", e)
+                        android.util.Log.e("PicoClawChannel", "uploadUmengDeviceReport failed: ${e.message}", e)
                         result.error("UPLOAD_UMENG_REPORT_FAILED", e.message, null)
                     }
                 }
@@ -287,7 +287,7 @@ class HomeOctoMethodChannel(
                 "saveToDownloads" -> {
                     // args: filename: String, bytes: Uint8List
                     try {
-                        val filename = call.argument<String>("filename") ?: "homeocto_logs.txt"
+                        val filename = call.argument<String>("filename") ?: "picoclaw_logs.txt"
                         val bytes = call.argument<ByteArray>("bytes")
                         if (bytes == null) {
                             result.error("NO_BYTES", "No bytes provided", null)
@@ -303,7 +303,7 @@ class HomeOctoMethodChannel(
                 "copyContentUriToCache" -> {
                     try {
                         val uriStr = call.argument<String>("uri") ?: ""
-                        val name = call.argument<String>("filename") ?: "homeocto_logs.txt"
+                        val name = call.argument<String>("filename") ?: "picoclaw_logs.txt"
                         val path = copyContentUriToCache(uriStr, name)
                         result.success(path)
                     } catch (e: Exception) {
@@ -345,7 +345,7 @@ class HomeOctoMethodChannel(
             // For older devices, attempt fallback to legacy external storage path
             try {
                 val downloads = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                val dir = java.io.File(downloads, "homeocto")
+                val dir = java.io.File(downloads, "picoclaw")
                 if (!dir.exists()) dir.mkdirs()
                 val f = java.io.File(dir, fileName)
                 f.writeBytes(data)

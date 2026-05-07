@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'PicoClaw UI';
+  String get appTitle => 'HomeOcto UI';
 
   @override
   String get run => '运行';

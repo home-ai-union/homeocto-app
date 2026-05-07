@@ -15,7 +15,7 @@ class MainActivity : FlutterActivity() {
         private const val TAG = "MainActivity"
     }
 
-    private var methodChannel: HomeOctoMethodChannel? = null
+    private var methodChannel: PicoClawMethodChannel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,7 +24,7 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        methodChannel = HomeOctoMethodChannel(this, flutterEngine)
+        methodChannel = PicoClawMethodChannel(this, flutterEngine)
     }
 
     override fun onNewIntent(intent: Intent) {

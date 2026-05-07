@@ -6,7 +6,7 @@ import 'core_service_adapter.dart';
 
 class AndroidCoreServiceAdapter implements CoreServiceAdapter {
   static const MethodChannel _channel = MethodChannel(
-    'com.sipeed.picoclaw/picoclaw',
+    'com.homeai.homeocto/picoclaw',
   );
   String? _lastErrorCode;
   // Stored log handler (not used on Android native adapter, but kept for API compatibility)

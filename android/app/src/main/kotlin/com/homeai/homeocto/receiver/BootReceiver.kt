@@ -4,16 +4,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.homeai.homeocto.service.HomeOctoService
+import com.homeai.homeocto.service.PicoClawService
 
 /**
- * 设备启动后自动启动 HomeOcto 服务（如果已开启自动启动）。
+ * 设备启动后自动启动 PicoClaw 服务（如果已开启自动启动）。
  */
 class BootReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "BootReceiver"
-        private const val PREF_NAME = "homeocto_prefs"
+        private const val PREF_NAME = "picoclaw_prefs"
         private const val KEY_AUTO_START = "auto_start"
     }
 
@@ -24,8 +24,8 @@ class BootReceiver : BroadcastReceiver() {
         val autoStart = prefs.getBoolean(KEY_AUTO_START, false)
 
         if (autoStart) {
-            Log.i(TAG, "Boot completed, auto-starting HomeOcto service")
-            HomeOctoService.start(context)
+            Log.i(TAG, "Boot completed, auto-starting PicoClaw service")
+            PicoClawService.start(context)
         } else {
             Log.i(TAG, "Boot completed, auto-start is disabled")
         }

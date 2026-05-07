@@ -12,7 +12,7 @@
 -dontwarn io.flutter.embedding.**
 
 # PicoClaw
--keep class com.sipeed.picoclaw.** { *; }
+-keep class com.homeai.homeocto.** { *; }
 
 # Umeng Analytics
 -keep class com.umeng.** { *; }
@@ -23,7 +23,7 @@
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }
--keep public class com.sipeed.picoclaw.R$* {
+-keep public class com.homeai.homeocto.R$* {
     public static final int *;
 }
 

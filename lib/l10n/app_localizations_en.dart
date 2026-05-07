@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'PicoClaw UI';
+  String get appTitle => 'HomeOcto UI';
 
   @override
   String get run => 'Run';

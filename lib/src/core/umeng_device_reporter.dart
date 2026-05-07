@@ -201,7 +201,7 @@ class UmengDeviceReporter {
       'platform': deviceInfo['platform'] ?? 'unknown',
       'deviceModel': deviceInfo['deviceModel'] ?? 'unknown',
       'systemVersion': deviceInfo['systemVersion'] ?? 'unknown',
-      'clientType': 'picoclaw_flutter_ui',
+      'clientType': 'homeocto_app',
       'updatedAt': updatedAt,
       'channel': channel.trim().isEmpty ? _defaultChannel : channel.trim(),
     };

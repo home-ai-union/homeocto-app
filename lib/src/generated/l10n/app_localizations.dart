@@ -121,7 +121,7 @@ abstract class AppLocalizations {
   /// The title of the application
   ///
   /// In en, this message translates to:
-  /// **'PicoClaw UI'**
+  /// **'HomeOcto'**
   String get appTitle;
 
   /// No description provided for @run.
@@ -481,13 +481,13 @@ abstract class AppLocalizations {
   /// No description provided for @localModeHint.
   ///
   /// In en, this message translates to:
-  /// **'1. Go to Service Config\n2. Turn on Public Mode\n3. Restart the service\n4. Scan QR code to access PicoClaw'**
+  /// **'1. Go to Service Config\n2. Turn on Public Mode\n3. Restart the service\n4. Scan QR code to access HomeOcto'**
   String get localModeHint;
 
   /// No description provided for @publicModeHint.
   ///
   /// In en, this message translates to:
-  /// **'1. Start the service\n2. Scan QR code to access PicoClaw'**
+  /// **'1. Start the service\n2. Scan QR code to access HomeOcto'**
   String get publicModeHint;
 
   /// No description provided for @noLogsToExport.
@@ -511,7 +511,7 @@ abstract class AppLocalizations {
   /// No description provided for @shareLogsText.
   ///
   /// In en, this message translates to:
-  /// **'Picoclaw logs'**
+  /// **'HomeOcto logs'**
   String get shareLogsText;
 
   /// No description provided for @workspaceDirectory.
@@ -595,19 +595,19 @@ abstract class AppLocalizations {
   /// No description provided for @aboutDescription.
   ///
   /// In en, this message translates to:
-  /// **'PicoClaw is a cross-platform Flutter app for managing the PicoClaw service.'**
+  /// **'HomeOcto is a cross-platform Flutter app for managing the HomeOcto smart home service.'**
   String get aboutDescription;
 
   /// No description provided for @aboutAppVersionLabel.
   ///
   /// In en, this message translates to:
-  /// **'PicoClaw version'**
+  /// **'HomeOcto version'**
   String get aboutAppVersionLabel;
 
   /// No description provided for @aboutCoreVersionLabel.
   ///
   /// In en, this message translates to:
-  /// **'PicoClaw Core version'**
+  /// **'HomeOcto Core version'**
   String get aboutCoreVersionLabel;
 
   /// No description provided for @aboutVersionUnavailable.
@@ -619,7 +619,7 @@ abstract class AppLocalizations {
   /// No description provided for @picoclawOfficial.
   ///
   /// In en, this message translates to:
-  /// **'PicoClaw Official'**
+  /// **'HomeOcto Official'**
   String get picoclawOfficial;
 
   /// No description provided for @sipeedOfficial.

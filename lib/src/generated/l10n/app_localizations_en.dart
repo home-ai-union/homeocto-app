@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'PicoClaw UI';
+  String get appTitle => 'HomeOcto';
 
   @override
   String get run => 'Run';
@@ -201,11 +201,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get localModeHint =>
-      '1. Go to Service Config\n2. Turn on Public Mode\n3. Restart the service\n4. Scan QR code to access PicoClaw';
+      '1. Go to Service Config\n2. Turn on Public Mode\n3. Restart the service\n4. Scan QR code to access HomeOcto';
 
   @override
   String get publicModeHint =>
-      '1. Start the service\n2. Scan QR code to access PicoClaw';
+      '1. Start the service\n2. Scan QR code to access HomeOcto';
 
   @override
   String get noLogsToExport => 'No logs to export';
@@ -220,7 +220,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get shareLogsText => 'Picoclaw logs';
+  String get shareLogsText => 'HomeOcto logs';
 
   @override
   String get workspaceDirectory => 'Workspace';
@@ -270,19 +270,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutDescription =>
-      'PicoClaw is a cross-platform Flutter app for managing the PicoClaw service.';
+      'HomeOcto is a cross-platform Flutter app for managing the HomeOcto smart home service.';
 
   @override
-  String get aboutAppVersionLabel => 'PicoClaw version';
+  String get aboutAppVersionLabel => 'HomeOcto version';
 
   @override
-  String get aboutCoreVersionLabel => 'PicoClaw Core version';
+  String get aboutCoreVersionLabel => 'HomeOcto Core version';
 
   @override
   String get aboutVersionUnavailable => 'Unavailable';
 
   @override
-  String get picoclawOfficial => 'PicoClaw Official';
+  String get picoclawOfficial => 'HomeOcto Official';
 
   @override
   String get sipeedOfficial => 'Sipeed Official';

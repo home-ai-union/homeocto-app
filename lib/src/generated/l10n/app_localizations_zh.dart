@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'PicoClaw UI';
+  String get appTitle => 'HomeOcto';
 
   @override
   String get run => '运行';
@@ -195,10 +195,10 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get localModeHint =>
-      '1. 进入服务配置\n2. 打开公共模式\n3. 重启服务\n4. 扫描二维码访问PicoClaw';
+      '1. 进入服务配置\n2. 打开公共模式\n3. 重启服务\n4. 扫描二维码访问 HomeOcto';
 
   @override
-  String get publicModeHint => '1. 启动服务\n2. 扫描二维码访问PicoClaw';
+  String get publicModeHint => '1. 启动服务\n2. 扫描二维码访问 HomeOcto';
 
   @override
   String get noLogsToExport => '没有可导出的日志';
@@ -272,7 +272,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutVersionUnavailable => '不可用';
 
   @override
-  String get picoclawOfficial => 'PicoClaw 官网';
+  String get picoclawOfficial => 'HomeOcto 官网';
 
   @override
   String get sipeedOfficial => 'Sipeed 官网';
