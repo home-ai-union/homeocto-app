@@ -9,7 +9,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Define paths
-$PicoclawRoot = "G:\code\picoclaw-fui"
+$PicoclawRoot = "G:\code\picoclaw_fui"
 $HomeoctoRoot = "G:\code\homeocto-app"
 
 # Check if source directory exists
@@ -24,7 +24,7 @@ if (-not (Test-Path $HomeoctoRoot)) {
     exit 1
 }
 
-Write-Host "Source (picoclaw-fui): $PicoclawRoot" -ForegroundColor Green
+Write-Host "Source (picoclaw_fui): $PicoclawRoot" -ForegroundColor Green
 Write-Host "Target (homeocto-app): $HomeoctoRoot" -ForegroundColor Green
 Write-Host ""
 
