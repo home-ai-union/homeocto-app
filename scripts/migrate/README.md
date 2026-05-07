@@ -26,18 +26,100 @@
 
 ## 迁移内容
 
-### 目录
-1. `android` → `android` - Android 平台代码
-2. `ios` → `ios` - iOS 平台代码
-3. `linux` → `linux` - Linux 平台代码
-4. `macos` → `macos` - macOS 平台代码
-5. `lib` → `lib` - Dart/Flutter 核心代码
-6. `test` → `test` - 测试代码
-7. `tools` → `tools` - 工具脚本
-8. `web` → `web` - Web 平台代码
-9. `windows` → `windows` - Windows 平台代码
+### 通用目录（完全替换）
+1. `lib` → `lib` - Dart/Flutter 核心代码
+2. `test` → `test` - 测试代码
+3. `tools` → `tools` - 工具脚本
 
-### 配置文件
+### Android 平台
+**需要拷贝的目录：**
+- `app/src/main/kotlin` - Kotlin 源代码（自动处理包名重命名：com.sipeed.picoclaw → com.homeai.homeocto）
+- `app/src/main/res` - 资源文件（图标、布局等）
+
+**需要拷贝的文件：**
+- `app/src/main/AndroidManifest.xml` - Android 清单文件
+- `app/build.gradle.kts` - 应用构建配置
+- `app/proguard-rules.pro` - 代码混淆规则
+- `build.gradle.kts` - 项目构建配置
+- `settings.gradle.kts` - Gradle 设置
+- `gradle.properties` - Gradle 属性
+- `.gitignore` - Git 忽略规则
+
+**自动生成的文件（不拷贝）：**
+- `local.properties` - 本地 SDK 路径（由 Android Studio 生成）
+- `gradle/wrapper/` - Gradle 包装器（由 Gradle 生成）
+- `build/` - 构建产物
+- `.gradle/` - Gradle 缓存
+
+### iOS 平台
+**需要拷贝的目录：**
+- `Runner/` - iOS 应用代码和资源
+- `Runner.xcodeproj/` - Xcode 项目配置
+- `RunnerTests/` - 测试代码
+
+**需要拷贝的文件：**
+- `Podfile` - CocoaPods 依赖配置
+- `.gitignore` - Git 忽略规则
+
+**自动生成的文件（不拷贝）：**
+- `Flutter/Generated.xcconfig` - Flutter 生成的配置
+- `Flutter/ephemeral/` - Flutter 临时文件
+- `Flutter/flutter_export_environment.sh` - 导出脚本
+- `Pods/` - CocoaPods 依赖（由 pod install 生成）
+
+### macOS 平台
+**需要拷贝的目录：**
+- `Runner/` - macOS 应用代码和资源
+- `Runner.xcodeproj/` - Xcode 项目配置
+- `Runner.xcworkspace/` - Xcode 工作区
+- `RunnerTests/` - 测试代码
+
+**需要拷贝的文件：**
+- `Podfile` - CocoaPods 依赖配置
+- `.gitignore` - Git 忽略规则
+
+**自动生成的文件（不拷贝）：**
+- `Flutter/GeneratedPluginRegistrant.swift` - 插件注册
+- `Flutter/ephemeral/` - Flutter 临时文件
+- `Flutter/Flutter-*.xcconfig` - Flutter 生成的配置
+
+### Linux 平台
+**需要拷贝的目录：**
+- `runner/` - Linux 应用代码
+
+**需要拷贝的文件：**
+- `CMakeLists.txt` - CMake 构建配置
+- `.gitignore` - Git 忽略规则
+
+**自动生成的文件（不拷贝）：**
+- `flutter/` - Flutter 引擎和插件配置
+- `flutter/ephemeral/` - Flutter 临时文件
+- `flutter/ephemeral/.plugin_symlinks/` - 插件符号链接
+- `build/` - 构建产物
+
+### Web 平台（全部拷贝）
+**需要拷贝的目录：**
+- `icons/` - Web 图标文件
+
+**需要拷贝的文件：**
+- `favicon.png` - 网站图标
+- `index.html` - HTML 入口文件
+- `manifest.json` - Web 清单文件
+
+### Windows 平台
+**需要拷贝的目录：**
+- `runner/` - Windows 应用代码
+
+**需要拷贝的文件：**
+- `CMakeLists.txt` - CMake 构建配置
+- `.gitignore` - Git 忽略规则
+
+**自动生成的文件（不拷贝）：**
+- `flutter/` - Flutter 引擎和插件配置
+- `flutter/ephemeral/` - Flutter 临时文件
+- `build/` - 构建产物
+
+### 配置文件（完全替换）
 1. `analysis_options.yaml` → `analysis_options.yaml`
 2. `devtools_options.yaml` → `devtools_options.yaml`
 3. `l10n.yaml` → `l10n.yaml`

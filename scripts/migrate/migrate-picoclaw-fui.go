@@ -28,15 +28,81 @@ var replacements = []struct {
 
 // 需要拷贝的目录列表
 var dirsToCopy = []string{
-	"android",
-	"ios",
-	"linux",
-	"macos",
 	"lib",
 	"test",
 	"tools",
-	"web",
-	"windows",
+}
+
+// Android 需要拷贝的目录和文件
+var androidDirsToCopy = []string{
+	"app/src/main/kotlin",
+	"app/src/main/res",
+}
+
+var androidFilesToCopy = []string{
+	"app/src/main/AndroidManifest.xml",
+	"app/build.gradle.kts",
+	"app/proguard-rules.pro",
+	"build.gradle.kts",
+	"settings.gradle.kts",
+	"gradle.properties",
+	".gitignore",
+}
+
+// iOS 需要拷贝的目录和文件（排除自动生成的）
+var iosDirsToCopy = []string{
+	"Runner",
+	"Runner.xcodeproj",
+	"RunnerTests",
+}
+
+var iosFilesToCopy = []string{
+	".gitignore",
+	"Podfile",
+}
+
+// macOS 需要拷贝的目录和文件（排除自动生成的）
+var macosDirsToCopy = []string{
+	"Runner",
+	"Runner.xcodeproj",
+	"Runner.xcworkspace",
+	"RunnerTests",
+}
+
+var macosFilesToCopy = []string{
+	".gitignore",
+	"Podfile",
+}
+
+// Linux 需要拷贝的目录和文件（排除自动生成的）
+var linuxDirsToCopy = []string{
+	"runner",
+}
+
+var linuxFilesToCopy = []string{
+	"CMakeLists.txt",
+	".gitignore",
+}
+
+// Web 需要拷贝的所有内容（都是源文件）
+var webDirsToCopy = []string{
+	"icons",
+}
+
+var webFilesToCopy = []string{
+	"favicon.png",
+	"index.html",
+	"manifest.json",
+}
+
+// Windows 需要拷贝的目录和文件
+var windowsDirsToCopy = []string{
+	"runner",
+}
+
+var windowsFilesToCopy = []string{
+	"CMakeLists.txt",
+	".gitignore",
 }
 
 // 需要拷贝的文件列表
@@ -85,9 +151,11 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Please commit or stash your changes before running migration.\n")
 		os.Exit(1)
 	}
-	fmt.Println("✓ Git working directory is clean\n")
+	fmt.Println("✓ Git working directory is clean")
+	fmt.Println()
 
-	// 1. 处理目录
+	// 1. 处理通用目录（lib, test, tools）
+	fmt.Println("=== Processing common directories ===")
 	for _, dir := range dirsToCopy {
 		if err := processDirectory(picoclawRoot, homeoctoRoot, dir); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing %s directory: %v\n", dir, err)
@@ -95,7 +163,43 @@ func main() {
 		}
 	}
 
-	// 2. 处理文件
+	// 2. 处理 Android 目录
+	if err := processAndroidDir(picoclawRoot, homeoctoRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing Android directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 3. 处理 iOS 目录
+	if err := processIOSDir(picoclawRoot, homeoctoRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing iOS directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 4. 处理 macOS 目录
+	if err := processMacOSDir(picoclawRoot, homeoctoRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing macOS directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 5. 处理 Linux 目录
+	if err := processLinuxDir(picoclawRoot, homeoctoRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing Linux directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 6. 处理 Web 目录
+	if err := processWebDir(picoclawRoot, homeoctoRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing Web directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 7. 处理 Windows 目录
+	if err := processWindowsDir(picoclawRoot, homeoctoRoot); err != nil {
+		fmt.Fprintf(os.Stderr, "Error processing Windows directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	// 8. 处理配置文件
 	for _, file := range filesToCopy {
 		if err := processFile(picoclawRoot, homeoctoRoot, file); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing %s file: %v\n", file, err)
@@ -104,6 +208,264 @@ func main() {
 	}
 
 	fmt.Println("=== Migration completed successfully! ===")
+}
+
+// 处理 Android 目录
+func processAndroidDir(picoclawRoot, homeoctoRoot string) error {
+	fmt.Println("\n=== Processing Android directory ===")
+
+	// 拷贝目录
+	for _, dir := range androidDirsToCopy {
+		srcDir := filepath.Join(picoclawRoot, "android", dir)
+		dstDir := filepath.Join(homeoctoRoot, "android", dir)
+
+		if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", dir)
+			continue
+		}
+
+		fmt.Printf("  📁 %s -> %s\n", dir, dir)
+		if err := os.RemoveAll(dstDir); err != nil {
+			return fmt.Errorf("remove %s: %w", dstDir, err)
+		}
+		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+			return fmt.Errorf("copy %s: %w", dir, err)
+		}
+	}
+
+	// 拷贝文件
+	for _, file := range androidFilesToCopy {
+		srcFile := filepath.Join(picoclawRoot, "android", file)
+		dstFile := filepath.Join(homeoctoRoot, "android", file)
+
+		if _, err := os.Stat(srcFile); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", file)
+			continue
+		}
+
+		fmt.Printf("  📄 %s -> %s\n", file, file)
+		if err := copyTextFileWithReplace(srcFile, dstFile); err != nil {
+			return fmt.Errorf("copy %s: %w", file, err)
+		}
+	}
+
+	fmt.Println("✓ Android directory processed successfully")
+	return nil
+}
+
+// 处理 iOS 目录
+func processIOSDir(picoclawRoot, homeoctoRoot string) error {
+	fmt.Println("\n=== Processing iOS directory ===")
+
+	// 拷贝目录
+	for _, dir := range iosDirsToCopy {
+		srcDir := filepath.Join(picoclawRoot, "ios", dir)
+		dstDir := filepath.Join(homeoctoRoot, "ios", dir)
+
+		if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", dir)
+			continue
+		}
+
+		fmt.Printf("  📁 %s -> %s\n", dir, dir)
+		if err := os.RemoveAll(dstDir); err != nil {
+			return fmt.Errorf("remove %s: %w", dstDir, err)
+		}
+		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+			return fmt.Errorf("copy %s: %w", dir, err)
+		}
+	}
+
+	// 拷贝文件
+	for _, file := range iosFilesToCopy {
+		srcFile := filepath.Join(picoclawRoot, "ios", file)
+		dstFile := filepath.Join(homeoctoRoot, "ios", file)
+
+		if _, err := os.Stat(srcFile); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", file)
+			continue
+		}
+
+		fmt.Printf("  📄 %s -> %s\n", file, file)
+		if err := copyTextFileWithReplace(srcFile, dstFile); err != nil {
+			return fmt.Errorf("copy %s: %w", file, err)
+		}
+	}
+
+	fmt.Println("✓ iOS directory processed successfully")
+	return nil
+}
+
+// 处理 macOS 目录
+func processMacOSDir(picoclawRoot, homeoctoRoot string) error {
+	fmt.Println("\n=== Processing macOS directory ===")
+
+	// 拷贝目录
+	for _, dir := range macosDirsToCopy {
+		srcDir := filepath.Join(picoclawRoot, "macos", dir)
+		dstDir := filepath.Join(homeoctoRoot, "macos", dir)
+
+		if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", dir)
+			continue
+		}
+
+		fmt.Printf("  📁 %s -> %s\n", dir, dir)
+		if err := os.RemoveAll(dstDir); err != nil {
+			return fmt.Errorf("remove %s: %w", dstDir, err)
+		}
+		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+			return fmt.Errorf("copy %s: %w", dir, err)
+		}
+	}
+
+	// 拷贝文件
+	for _, file := range macosFilesToCopy {
+		srcFile := filepath.Join(picoclawRoot, "macos", file)
+		dstFile := filepath.Join(homeoctoRoot, "macos", file)
+
+		if _, err := os.Stat(srcFile); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", file)
+			continue
+		}
+
+		fmt.Printf("  📄 %s -> %s\n", file, file)
+		if err := copyTextFileWithReplace(srcFile, dstFile); err != nil {
+			return fmt.Errorf("copy %s: %w", file, err)
+		}
+	}
+
+	fmt.Println("✓ macOS directory processed successfully")
+	return nil
+}
+
+// 处理 Linux 目录
+func processLinuxDir(picoclawRoot, homeoctoRoot string) error {
+	fmt.Println("\n=== Processing Linux directory ===")
+
+	// 拷贝目录
+	for _, dir := range linuxDirsToCopy {
+		srcDir := filepath.Join(picoclawRoot, "linux", dir)
+		dstDir := filepath.Join(homeoctoRoot, "linux", dir)
+
+		if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", dir)
+			continue
+		}
+
+		fmt.Printf("  📁 %s -> %s\n", dir, dir)
+		if err := os.RemoveAll(dstDir); err != nil {
+			return fmt.Errorf("remove %s: %w", dstDir, err)
+		}
+		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+			return fmt.Errorf("copy %s: %w", dir, err)
+		}
+	}
+
+	// 拷贝文件
+	for _, file := range linuxFilesToCopy {
+		srcFile := filepath.Join(picoclawRoot, "linux", file)
+		dstFile := filepath.Join(homeoctoRoot, "linux", file)
+
+		if _, err := os.Stat(srcFile); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", file)
+			continue
+		}
+
+		fmt.Printf("  📄 %s -> %s\n", file, file)
+		if err := copyTextFileWithReplace(srcFile, dstFile); err != nil {
+			return fmt.Errorf("copy %s: %w", file, err)
+		}
+	}
+
+	fmt.Println("✓ Linux directory processed successfully")
+	return nil
+}
+
+// 处理 Web 目录
+func processWebDir(picoclawRoot, homeoctoRoot string) error {
+	fmt.Println("\n=== Processing Web directory ===")
+
+	// 拷贝目录
+	for _, dir := range webDirsToCopy {
+		srcDir := filepath.Join(picoclawRoot, "web", dir)
+		dstDir := filepath.Join(homeoctoRoot, "web", dir)
+
+		if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", dir)
+			continue
+		}
+
+		fmt.Printf("  📁 %s -> %s\n", dir, dir)
+		if err := os.RemoveAll(dstDir); err != nil {
+			return fmt.Errorf("remove %s: %w", dstDir, err)
+		}
+		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+			return fmt.Errorf("copy %s: %w", dir, err)
+		}
+	}
+
+	// 拷贝文件
+	for _, file := range webFilesToCopy {
+		srcFile := filepath.Join(picoclawRoot, "web", file)
+		dstFile := filepath.Join(homeoctoRoot, "web", file)
+
+		if _, err := os.Stat(srcFile); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", file)
+			continue
+		}
+
+		fmt.Printf("  📄 %s -> %s\n", file, file)
+		if err := copyTextFileWithReplace(srcFile, dstFile); err != nil {
+			return fmt.Errorf("copy %s: %w", file, err)
+		}
+	}
+
+	fmt.Println("✓ Web directory processed successfully")
+	return nil
+}
+
+// 处理 Windows 目录
+func processWindowsDir(picoclawRoot, homeoctoRoot string) error {
+	fmt.Println("\n=== Processing Windows directory ===")
+
+	// 拷贝目录
+	for _, dir := range windowsDirsToCopy {
+		srcDir := filepath.Join(picoclawRoot, "windows", dir)
+		dstDir := filepath.Join(homeoctoRoot, "windows", dir)
+
+		if _, err := os.Stat(srcDir); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", dir)
+			continue
+		}
+
+		fmt.Printf("  📁 %s -> %s\n", dir, dir)
+		if err := os.RemoveAll(dstDir); err != nil {
+			return fmt.Errorf("remove %s: %w", dstDir, err)
+		}
+		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+			return fmt.Errorf("copy %s: %w", dir, err)
+		}
+	}
+
+	// 拷贝文件
+	for _, file := range windowsFilesToCopy {
+		srcFile := filepath.Join(picoclawRoot, "windows", file)
+		dstFile := filepath.Join(homeoctoRoot, "windows", file)
+
+		if _, err := os.Stat(srcFile); os.IsNotExist(err) {
+			fmt.Printf("  ⚠ Warning: %s not found in source, skipping\n", file)
+			continue
+		}
+
+		fmt.Printf("  📄 %s -> %s\n", file, file)
+		if err := copyTextFileWithReplace(srcFile, dstFile); err != nil {
+			return fmt.Errorf("copy %s: %w", file, err)
+		}
+	}
+
+	fmt.Println("✓ Windows directory processed successfully")
+	return nil
 }
 
 // 检查 Git 工作目录是否有未提交的更改
@@ -309,6 +671,8 @@ func shouldSkipDirectory(relPath string) bool {
 		".dart_tool",
 		".gradle",
 		"Pods",
+		"ephemeral",        // Flutter 自动生成的构建产物
+		".plugin_symlinks", // Flutter 插件符号链接
 	}
 
 	for _, skip := range skipDirs {
