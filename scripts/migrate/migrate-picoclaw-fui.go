@@ -16,6 +16,10 @@ var replacements = []struct {
 	oldStr string
 	newStr string
 }{
+	// 应用名称替换（最长优先）
+	{"PicoClaw UI", "HomeOcto UI"},
+	{"Picoclaw UI", "HomeOcto UI"},
+	{"picoclaw UI", "homeocto UI"},
 	// Flutter/Dart 包名替换
 	{"picoclaw_flutter_ui", "homeocto_app"},
 	// Android 包名替换
@@ -214,8 +218,30 @@ func main() {
 func processAndroidDir(picoclawRoot, homeoctoRoot string) error {
 	fmt.Println("\n=== Processing Android directory ===")
 
-	// 拷贝目录
-	for _, dir := range androidDirsToCopy {
+	// 特殊处理：Kotlin 目录需要重命名包名路径
+	srcKotlinDir := filepath.Join(picoclawRoot, "android", "app", "src", "main", "kotlin", "com", "sipeed", "picoclaw")
+	dstKotlinDir := filepath.Join(homeoctoRoot, "android", "app", "src", "main", "kotlin", "com", "homeai", "homeocto")
+
+	if _, err := os.Stat(srcKotlinDir); err == nil {
+		fmt.Println("  📁 app/src/main/kotlin (com.sipeed.picoclaw -> com.homeai.homeocto)")
+		// 删除旧的 com 目录
+		oldComDir := filepath.Join(homeoctoRoot, "android", "app", "src", "main", "kotlin", "com")
+		if err := os.RemoveAll(oldComDir); err != nil {
+			return fmt.Errorf("remove old kotlin com dir: %w", err)
+		}
+		// 拷贝并替换到新路径
+		if err := copyDirWithReplace(srcKotlinDir, dstKotlinDir); err != nil {
+			return fmt.Errorf("copy kotlin directory: %w", err)
+		}
+	} else {
+		fmt.Println("  ⚠ Warning: Kotlin source directory not found, skipping")
+	}
+
+	// 拷贝其他目录
+	otherAndroidDirs := []string{
+		"app/src/main/res",
+	}
+	for _, dir := range otherAndroidDirs {
 		srcDir := filepath.Join(picoclawRoot, "android", dir)
 		dstDir := filepath.Join(homeoctoRoot, "android", dir)
 

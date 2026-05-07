@@ -13,11 +13,10 @@
 ## 替换规则
 | 原字符串 | 新字符串 | 说明 |
 |---------|---------|------|
+| PicoClaw UI | HomeOcto UI | 应用名称（首字母大写） |
+| Picoclaw UI | HomeOcto UI | 应用名称（首字母大写） |
+| picoclaw UI | homeocto UI | 应用名称（小写） |
 | picoclaw_flutter_ui | homeocto_app | Flutter 包名 |
-| picoclaw_fui | homeocto_app | Flutter 包名简写 |
-| picoclaw | homeocto | 项目名称 |
-| Picoclaw | HomeOcto | 项目名称（首字母大写） |
-| PICOCLAW | HOMEOCTO | 项目名称（全大写） |
 | com.sipeed.picoclaw | com.homeai.homeocto | Android 包名/iOS Bundle ID |
 
 ### 不替换的内容（外部依赖包）
