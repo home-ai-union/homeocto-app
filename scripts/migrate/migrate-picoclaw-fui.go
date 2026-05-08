@@ -748,6 +748,7 @@ func isTextFile(path string) bool {
 		".ts":           true,
 		".tsx":          true,
 		".json":         true,
+		".arb":          true, // Flutter 国际化文件
 		".yaml":         true,
 		".yml":          true,
 		".xml":          true,

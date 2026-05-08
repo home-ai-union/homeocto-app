@@ -170,6 +170,7 @@ cd g:\code\homeocto-app\scripts\migrate
 ## 文本文件类型
 以下类型的文件会被识别为文本文件并执行替换：
 - Dart: `.dart`
+- Flutter 国际化: `.arb`
 - Kotlin: `.kt`, `.kts`
 - Java: `.java`
 - Swift/Objective-C: `.swift`, `.m`, `.h`, `.mm`
