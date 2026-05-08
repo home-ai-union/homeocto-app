@@ -214,11 +214,7 @@ class TVTextField extends StatelessWidget {
         return AlertDialog(
           title: Text(
             labelText ?? 'Edit',
-            style: TextStyle(
-              color: colorScheme.secondary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(color: colorScheme.secondary, fontSize: 20, fontWeight: FontWeight.bold),
           ),
           content: TextField(
             controller: textController,

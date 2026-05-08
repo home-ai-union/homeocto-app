@@ -159,6 +159,10 @@ cd g:\code\homeocto-app\scripts\migrate
 - `.dart_tool` - Dart 工具缓存
 - `.gradle` - Gradle 缓存
 - `Pods` - CocoaPods 依赖
+- `ephemeral` - Flutter 自动生成的构建产物
+- `.plugin_symlinks` - Flutter 插件符号链接
+- `generated` - Flutter 自动生成的代码（如国际化文件 l10n）
+- `project.xcworkspace` - Xcode 自动生成的工作区配置
 
 ## 跳过的文件
 - `.DS_Store` - macOS 系统文件

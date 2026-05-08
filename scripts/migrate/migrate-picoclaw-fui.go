@@ -79,7 +79,6 @@ var iosFilesToCopy = []string{
 var macosDirsToCopy = []string{
 	"Runner",
 	"Runner.xcodeproj",
-	"Runner.xcworkspace",
 	"RunnerTests",
 }
 
@@ -707,8 +706,10 @@ func shouldSkipDirectory(relPath string) bool {
 		".dart_tool",
 		".gradle",
 		"Pods",
-		"ephemeral",        // Flutter 自动生成的构建产物
-		".plugin_symlinks", // Flutter 插件符号链接
+		"ephemeral",         // Flutter 自动生成的构建产物
+		".plugin_symlinks",  // Flutter 插件符号链接
+		"generated",         // Flutter 自动生成的代码（如国际化文件）
+		"project.xcworkspace", // Xcode 自动生成的工作区配置
 	}
 
 	for _, skip := range skipDirs {
