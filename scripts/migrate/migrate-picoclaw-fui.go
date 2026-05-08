@@ -20,9 +20,20 @@ var replacements = []struct {
 	{"PicoClaw UI", "HomeOcto UI"},
 	{"Picoclaw UI", "HomeOcto UI"},
 	{"picoclaw UI", "homeocto UI"},
+	// 应用描述中的完整名称
+	{"PicoClaw is a cross-platform Flutter app for managing the PicoClaw service.", "HomeOcto is a cross-platform Flutter app for managing the HomeOcto service."},
+	{"PicoClaw Flutter UI", "HomeOcto Flutter UI"},
+	{"Picoclaw Flutter UI", "HomeOcto Flutter UI"},
+	// 品牌和版本相关
+	{"PicoClaw Official", "HomeOcto Official"},
+	{"PicoClaw version", "HomeOcto version"},
+	{"PicoClaw Core version", "HomeOcto Core version"},
+	{"PicoClaw Core", "HomeOcto Core"},
 	// Flutter/Dart 包名替换
 	{"picoclaw_flutter_ui", "homeocto_app"},
+
 	// Android 包名替换
+	{"com.sipeed.picoclaw/picoclaw", "com.homeai.homeocto/homeocto"},
 	{"com.sipeed.picoclaw", "com.homeai.homeocto"},
 	// iOS Bundle ID 替换
 	{"com.sipeed.picoclaw", "com.homeai.homeocto"},
