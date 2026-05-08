@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/smart_home_provider.dart';
-import '../core/homeocto_client.dart';
+import '../core/homeocto_client.dart' as homeocto;
 
 /// 智能家居管理页面
 class SmartHomePage extends StatefulWidget {
@@ -90,7 +90,7 @@ class _SmartHomePageState extends State<SmartHomePage> {
       builder: (context, provider, _) {
         final isConnected = provider.isConnected;
         final isConnecting =
-            provider.connectionState == ConnectionState.connecting;
+            provider.connectionState == homeocto.ConnectionState.connecting;
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
