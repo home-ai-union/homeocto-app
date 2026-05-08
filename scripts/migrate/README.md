@@ -140,7 +140,8 @@ cd g:\code\homeocto-app\scripts\migrate
 
 ## 注意事项
 - ⚠️ 迁移前请确保已备份目标目录的重要文件
-- ⚠️ 脚本会**先删除**目标目录中的同名目录和文件，然后重新拷贝
+- ⚠️ **Android/Kotlin 目录**：会删除旧的包名目录并创建新的包名目录
+- ⚠️ **iOS/macOS 目录**：采用合并策略，**不会删除**目标目录中自动生成的文件（如 `project.xcworkspace`）
 - ✅ 自动跳过 `node_modules`、`.git`、`.dart_tool`、`build` 等目录
 - ✅ 二进制文件（图片、字体等）不会执行替换，直接拷贝
 - ✅ 文本文件会执行关键词替换

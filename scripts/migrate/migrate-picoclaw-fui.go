@@ -292,7 +292,7 @@ func processAndroidDir(picoclawRoot, homeoctoRoot string) error {
 func processIOSDir(picoclawRoot, homeoctoRoot string) error {
 	fmt.Println("\n=== Processing iOS directory ===")
 
-	// 拷贝目录
+	// 拷贝目录（不删除整个目录，只更新源目录中存在的文件）
 	for _, dir := range iosDirsToCopy {
 		srcDir := filepath.Join(picoclawRoot, "ios", dir)
 		dstDir := filepath.Join(homeoctoRoot, "ios", dir)
@@ -303,10 +303,8 @@ func processIOSDir(picoclawRoot, homeoctoRoot string) error {
 		}
 
 		fmt.Printf("  📁 %s -> %s\n", dir, dir)
-		if err := os.RemoveAll(dstDir); err != nil {
-			return fmt.Errorf("remove %s: %w", dstDir, err)
-		}
-		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+		// 不删除整个目录，只拷贝/覆盖源目录中的文件
+		if err := copyDirWithMerge(srcDir, dstDir); err != nil {
 			return fmt.Errorf("copy %s: %w", dir, err)
 		}
 	}
@@ -335,7 +333,7 @@ func processIOSDir(picoclawRoot, homeoctoRoot string) error {
 func processMacOSDir(picoclawRoot, homeoctoRoot string) error {
 	fmt.Println("\n=== Processing macOS directory ===")
 
-	// 拷贝目录
+	// 拷贝目录（不删除整个目录，只更新源目录中存在的文件）
 	for _, dir := range macosDirsToCopy {
 		srcDir := filepath.Join(picoclawRoot, "macos", dir)
 		dstDir := filepath.Join(homeoctoRoot, "macos", dir)
@@ -346,10 +344,8 @@ func processMacOSDir(picoclawRoot, homeoctoRoot string) error {
 		}
 
 		fmt.Printf("  📁 %s -> %s\n", dir, dir)
-		if err := os.RemoveAll(dstDir); err != nil {
-			return fmt.Errorf("remove %s: %w", dstDir, err)
-		}
-		if err := copyDirWithReplace(srcDir, dstDir); err != nil {
+		// 不删除整个目录，只拷贝/覆盖源目录中的文件
+		if err := copyDirWithMerge(srcDir, dstDir); err != nil {
 			return fmt.Errorf("copy %s: %w", dir, err)
 		}
 	}
@@ -617,6 +613,48 @@ func copyDirWithReplace(srcDir, dstDir string) error {
 	})
 }
 
+// 拷贝目录并合并（不删除目标目录中不存在的文件）
+func copyDirWithMerge(srcDir, dstDir string) error {
+	return filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 计算相对路径
+		relPath, err := filepath.Rel(srcDir, path)
+		if err != nil {
+			return err
+		}
+
+		// 目标路径
+		targetPath := filepath.Join(dstDir, relPath)
+
+		if info.IsDir() {
+			// 跳过某些目录
+			if shouldSkipDirectory(relPath) {
+				return filepath.SkipDir
+			}
+			// 创建目录（如果不存在）
+			if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+				return os.MkdirAll(targetPath, info.Mode())
+			}
+			return nil
+		}
+
+		// 跳过某些文件
+		if shouldSkipFile(relPath) {
+			return nil
+		}
+
+		// 处理文件（覆盖或新建）
+		if isTextFile(relPath) {
+			return copyTextFileWithReplace(path, targetPath)
+		} else {
+			return copyBinaryFile(path, targetPath)
+		}
+	})
+}
+
 // 拷贝文本文件并执行替换
 func copyTextFileWithReplace(src, dst string) error {
 	// 打开源文件
@@ -706,9 +744,9 @@ func shouldSkipDirectory(relPath string) bool {
 		".dart_tool",
 		".gradle",
 		"Pods",
-		"ephemeral",         // Flutter 自动生成的构建产物
-		".plugin_symlinks",  // Flutter 插件符号链接
-		"generated",         // Flutter 自动生成的代码（如国际化文件）
+		"ephemeral",           // Flutter 自动生成的构建产物
+		".plugin_symlinks",    // Flutter 插件符号链接
+		"generated",           // Flutter 自动生成的代码（如国际化文件）
 		"project.xcworkspace", // Xcode 自动生成的工作区配置
 	}
 
