@@ -270,7 +270,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get aboutAppVersionLabel => 'PicoClaw 버전';
 
   @override
-  String get aboutCoreVersionLabel => 'PicoClaw Core 버전';
+  String get aboutCoreVersionLabel => 'HomeOcto Core 버전';
 
   @override
   String get aboutVersionUnavailable => '사용할 수 없음';

@@ -105,7 +105,7 @@
   "about": "关于",
   "aboutDescription": "PicoClaw 是一个用于管理 PicoClaw 服务的跨平台 Flutter 应用。",
   "aboutAppVersionLabel": "PicoClaw 版本",
-  "aboutCoreVersionLabel": "PicoClaw Core 版本",
+  "aboutCoreVersionLabel": "HomeOcto Core 版本",
   "aboutVersionUnavailable": "不可用",
   "picoclawOfficial": "HomeOcto 官网",
   "sipeedOfficial": "Sipeed 官网",

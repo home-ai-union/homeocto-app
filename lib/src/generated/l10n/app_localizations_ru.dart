@@ -279,7 +279,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get aboutAppVersionLabel => 'Версия PicoClaw';
 
   @override
-  String get aboutCoreVersionLabel => 'Версия PicoClaw Core';
+  String get aboutCoreVersionLabel => 'Версия HomeOcto Core';
 
   @override
   String get aboutVersionUnavailable => 'Недоступно';

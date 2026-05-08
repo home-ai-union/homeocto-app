@@ -100,7 +100,7 @@
   "about": "概要",
   "aboutDescription": "PicoClaw は、PicoClaw サービスを管理するためのクロスプラットフォーム Flutter アプリです。",
   "aboutAppVersionLabel": "PicoClaw バージョン",
-  "aboutCoreVersionLabel": "PicoClaw Core バージョン",
+  "aboutCoreVersionLabel": "HomeOcto Core バージョン",
   "aboutVersionUnavailable": "利用できません",
   "picoclawOfficial": "PicoClaw 公式サイト",
   "sipeedOfficial": "Sipeed 公式サイト",

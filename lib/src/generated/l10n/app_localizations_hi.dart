@@ -276,7 +276,7 @@ class AppLocalizationsHi extends AppLocalizations {
   String get aboutAppVersionLabel => 'PicoClaw संस्करण';
 
   @override
-  String get aboutCoreVersionLabel => 'PicoClaw Core संस्करण';
+  String get aboutCoreVersionLabel => 'HomeOcto Core संस्करण';
 
   @override
   String get aboutVersionUnavailable => 'उपलब्ध नहीं';

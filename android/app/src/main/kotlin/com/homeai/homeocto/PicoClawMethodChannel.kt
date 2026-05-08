@@ -37,7 +37,7 @@ class PicoClawMethodChannel(
 ) {
     companion object {
         private const val TAG = "PicoClawMethodChannel"
-        private const val CHANNEL_NAME = "com.homeai.homeocto/picoclaw"
+        private const val CHANNEL_NAME = "com.homeai.homeocto/homeocto"
         private const val PREF_NAME = "picoclaw_prefs"
         private const val KEY_AUTO_START = "auto_start"
     }

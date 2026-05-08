@@ -33,7 +33,6 @@ var replacements = []struct {
 	{"picoclaw_flutter_ui", "homeocto_app"},
 
 	// Android 包名替换
-	{"com.sipeed.picoclaw/picoclaw", "com.homeai.homeocto/homeocto"},
 	{"com.sipeed.picoclaw", "com.homeai.homeocto"},
 	// iOS Bundle ID 替换
 	{"com.sipeed.picoclaw", "com.homeai.homeocto"},

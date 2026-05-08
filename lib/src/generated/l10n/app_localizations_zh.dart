@@ -266,7 +266,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get aboutAppVersionLabel => 'PicoClaw 版本';
 
   @override
-  String get aboutCoreVersionLabel => 'PicoClaw Core 版本';
+  String get aboutCoreVersionLabel => 'HomeOcto Core 版本';
 
   @override
   String get aboutVersionUnavailable => '不可用';

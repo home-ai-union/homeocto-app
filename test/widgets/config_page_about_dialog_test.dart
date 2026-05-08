@@ -61,7 +61,7 @@ void main() {
     expect(find.text('About'), findsWidgets);
     expect(
       find.text(
-        'PicoClaw is a cross-platform Flutter app for managing the PicoClaw service.',
+        'HomeOcto is a cross-platform Flutter app for managing the HomeOcto service.',
       ),
       findsOneWidget,
     );
@@ -86,12 +86,12 @@ void main() {
 
     expect(find.text('About'), findsWidgets);
     expect(find.text('PicoClaw'), findsOneWidget);
-    expect(find.text('PicoClaw Flutter UI'), findsNothing);
-    expect(find.text('PicoClaw version'), findsOneWidget);
+    expect(find.text('HomeOcto Flutter UI'), findsNothing);
+    expect(find.text('HomeOcto version'), findsOneWidget);
     expect(find.text('1.2.3'), findsOneWidget);
-    expect(find.text('PicoClaw Core version'), findsOneWidget);
+    expect(find.text('HomeOcto Core version'), findsOneWidget);
     expect(find.text('core-9.8.7'), findsOneWidget);
-    expect(find.text('PicoClaw Official'), findsOneWidget);
+    expect(find.text('HomeOcto Official'), findsOneWidget);
     expect(find.text('Sipeed Official'), findsOneWidget);
   });
 
@@ -110,8 +110,8 @@ void main() {
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
-    expect(find.text('PicoClaw version'), findsNothing);
-    expect(find.text('PicoClaw Core version'), findsNothing);
+    expect(find.text('HomeOcto version'), findsNothing);
+    expect(find.text('HomeOcto Core version'), findsNothing);
 
     aboutInfoCompleter.complete(
       const AboutInfo(appVersion: '1.0.0', coreVersion: 'core-1.0.0'),
@@ -119,9 +119,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('PicoClaw version'), findsOneWidget);
+    expect(find.text('HomeOcto version'), findsOneWidget);
     expect(find.text('1.0.0'), findsOneWidget);
-    expect(find.text('PicoClaw Core version'), findsOneWidget);
+    expect(find.text('HomeOcto Core version'), findsOneWidget);
     expect(find.text('core-1.0.0'), findsOneWidget);
   });
 
@@ -130,8 +130,10 @@ void main() {
   ) async {
     await pumpConfigPage(
       tester,
-      aboutInfoLoader: () async =>
-          const AboutInfo(appVersion: '', coreVersion: 'unknown'),
+      aboutInfoLoader: () async => const AboutInfo(
+        appVersion: '',
+        coreVersion: 'unknown',
+      ),
     );
 
     await tester.tap(find.text('About'));
@@ -170,7 +172,7 @@ void main() {
     await tester.tap(find.text('About'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('PicoClaw Official'));
+    await tester.tap(find.text('HomeOcto Official'));
     await tester.pump();
     await tester.tap(find.text('Sipeed Official'));
     await tester.pump();
@@ -196,7 +198,7 @@ void main() {
 
       await tester.tap(find.text('About'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('PicoClaw Official'));
+      await tester.tap(find.text('HomeOcto Official'));
       await tester.pump();
 
       expect(find.text("Couldn't open the official link."), findsOneWidget);

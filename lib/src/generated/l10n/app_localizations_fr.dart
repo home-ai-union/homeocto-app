@@ -281,7 +281,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aboutAppVersionLabel => 'Version de PicoClaw';
 
   @override
-  String get aboutCoreVersionLabel => 'Version de PicoClaw Core';
+  String get aboutCoreVersionLabel => 'Version de HomeOcto Core';
 
   @override
   String get aboutVersionUnavailable => 'Indisponible';

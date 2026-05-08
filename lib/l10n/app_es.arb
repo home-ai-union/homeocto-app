@@ -100,7 +100,7 @@
   "about": "Acerca de",
   "aboutDescription": "PicoClaw es una aplicación Flutter multiplataforma para gestionar el servicio PicoClaw.",
   "aboutAppVersionLabel": "Versión de PicoClaw",
-  "aboutCoreVersionLabel": "Versión de PicoClaw Core",
+  "aboutCoreVersionLabel": "Versión de HomeOcto Core",
   "aboutVersionUnavailable": "No disponible",
   "picoclawOfficial": "Sitio oficial de PicoClaw",
   "sipeedOfficial": "Sitio oficial de Sipeed",

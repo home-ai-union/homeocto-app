@@ -269,7 +269,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get aboutAppVersionLabel => 'PicoClaw バージョン';
 
   @override
-  String get aboutCoreVersionLabel => 'PicoClaw Core バージョン';
+  String get aboutCoreVersionLabel => 'HomeOcto Core バージョン';
 
   @override
   String get aboutVersionUnavailable => '利用できません';
