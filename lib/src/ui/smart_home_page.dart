@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/smart_home_provider.dart';
 import '../core/homeocto_client.dart' as homeocto;
+import '../core/service_manager.dart';
 
 /// 智能家居管理页面
 class SmartHomePage extends StatefulWidget {
@@ -13,11 +14,43 @@ class SmartHomePage extends StatefulWidget {
 
 class _SmartHomePageState extends State<SmartHomePage> {
   late SmartHomeProvider _provider;
+  String? _connectionError;
 
   @override
   void initState() {
     super.initState();
     _provider = SmartHomeProvider();
+    _initConnection();
+  }
+
+  /// 初始化连接（参考 Chat 页面实现）
+  Future<void> _initConnection() async {
+    // 检查服务是否运行
+    final service = context.read<ServiceManager>();
+    if (service.status != ServiceStatus.running) {
+      debugPrint(
+        '[SmartHomePage] Gateway service not running, status: ${service.status}',
+      );
+      setState(() {
+        _connectionError = 'Gateway 服务未运行，请先在 Dashboard 页面启动服务';
+      });
+      return;
+    }
+
+    debugPrint(
+      '[SmartHomePage] Gateway service is running, connecting to device control WebSocket',
+    );
+
+    try {
+      await _provider.connect();
+    } catch (e) {
+      debugPrint('[SmartHomePage] Connection failed: $e');
+      if (mounted) {
+        setState(() {
+          _connectionError = '连接失败: $e\n请确保 Gateway 服务正在运行';
+        });
+      }
+    }
   }
 
   @override
@@ -91,6 +124,8 @@ class _SmartHomePageState extends State<SmartHomePage> {
         final isConnected = provider.isConnected;
         final isConnecting =
             provider.connectionState == homeocto.ConnectionState.connecting;
+        final hasError =
+            provider.connectionState == homeocto.ConnectionState.error;
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -115,24 +150,28 @@ class _SmartHomePageState extends State<SmartHomePage> {
                     : Colors.red,
               ),
               const SizedBox(width: 8),
-              Text(
-                isConnected
-                    ? 'Connected'
-                    : isConnecting
-                    ? 'Connecting...'
-                    : 'Disconnected',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isConnected
-                      ? Colors.green
+              Expanded(
+                child: Text(
+                  isConnected
+                      ? 'Connected'
                       : isConnecting
-                      ? Colors.orange
-                      : Colors.red,
+                      ? 'Connecting...'
+                      : hasError
+                      ? (_connectionError ?? 'Disconnected')
+                      : 'Disconnected',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isConnected
+                        ? Colors.green
+                        : isConnecting
+                        ? Colors.orange
+                        : Colors.red,
+                  ),
                 ),
               ),
               if (!isConnected && !isConnecting)
                 TextButton(
-                  onPressed: provider.connect,
+                  onPressed: _initConnection,
                   child: const Text(
                     'Reconnect',
                     style: TextStyle(fontSize: 12),
@@ -149,6 +188,41 @@ class _SmartHomePageState extends State<SmartHomePage> {
   Widget _buildDeviceList() {
     return Consumer<SmartHomeProvider>(
       builder: (context, provider, _) {
+        // 显示连接错误（参考 Chat 页面）
+        if (_connectionError != null && !provider.isConnected) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.cloud_off, size: 64, color: Colors.orange),
+                const SizedBox(height: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    _connectionError!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _initConnection,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    // 导航到 Dashboard 启动服务
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Go to Dashboard'),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (provider.isLoading && provider.devices.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }

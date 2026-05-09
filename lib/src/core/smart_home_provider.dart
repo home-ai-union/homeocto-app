@@ -23,25 +23,40 @@ class SmartHomeProvider extends ChangeNotifier {
     _init();
   }
 
-  /// 初始化
+  /// 初始化（参考 Chat 页面的消息监听机制）
   void _init() {
+    // 监听连接状态变化
     _client.connectionStream.listen((state) {
+      debugPrint('[SmartHomeProvider] Connection state changed: $state');
       _connectionState = state;
       notifyListeners();
 
       if (state == ConnectionState.connected) {
+        debugPrint('[SmartHomeProvider] Connected, loading devices');
         _loadDevices();
+      } else if (state == ConnectionState.error) {
+        debugPrint('[SmartHomeProvider] Connection error');
+        _error = 'WebSocket 连接失败，请检查 Gateway 服务是否运行';
+        notifyListeners();
       }
     });
 
+    // 监听服务器消息
     _client.messageStream.listen((message) {
+      debugPrint('[SmartHomeProvider] Received message: $message');
       _handleServerMessage(message);
     });
   }
 
-  /// 连接服务器
+  /// 连接服务器（参考 Chat 页面的连接逻辑）
   Future<void> connect() async {
-    await _client.connect();
+    debugPrint('[SmartHomeProvider] Connecting to device control WebSocket');
+    try {
+      await _client.connect();
+    } catch (e) {
+      debugPrint('[SmartHomeProvider] Connection failed: $e');
+      rethrow;
+    }
   }
 
   /// 断开连接
@@ -57,20 +72,26 @@ class SmartHomeProvider extends ChangeNotifier {
 
   /// 加载设备列表
   Future<void> _loadDevices() async {
+    if (_isLoading) return;
+
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
+      debugPrint('[SmartHomeProvider] Loading devices from API');
       // 尝试从 HTTP API 获取设备列表
       final response = await _client.get('/api/devices');
       if (response.containsKey('devices')) {
         _devices = List<Map<String, dynamic>>.from(response['devices']);
+        debugPrint('[SmartHomeProvider] Loaded ${_devices.length} devices');
       } else {
         _devices = [];
+        debugPrint('[SmartHomeProvider] No devices found');
       }
     } catch (e) {
-      _error = 'Failed to load devices: $e';
+      debugPrint('[SmartHomeProvider] Failed to load devices: $e');
+      _error = '加载设备失败: $e';
       _devices = [];
     } finally {
       _isLoading = false;

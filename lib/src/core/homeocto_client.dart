@@ -1,14 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/status.dart' as status;
+import 'package:homeocto_app/src/core/picoclaw_channel.dart';
 
 /// HomeOcto 客户端 - 负责与 HomeOcto Go 后端通信
 /// 支持 WebSocket 实时通信和 HTTP REST API
+///
+/// 注意:
+/// - WebSocket 连接到 libpicoclaw.so 的设备控制端点
+/// - URL: ws://127.0.0.1:18791/home/ws
+/// - Token: 与 Chat 端点相同 (picoclaw-android-local)
 class HomeOctoClient {
-  static const String _baseUrl = 'http://127.0.0.1:18790';
-  static const String _wsUrl = 'ws://127.0.0.1:18790/ws';
+  static const String _baseUrl = 'http://127.0.0.1:18800';
+  static const String _wsUrl = 'ws://127.0.0.1:18801/home/ws';
 
   WebSocketChannel? _channel;
   StreamSubscription? _wsSubscription;
@@ -30,10 +38,48 @@ class HomeOctoClient {
     if (_state == ConnectionState.connected) return;
 
     _setState(ConnectionState.connecting);
+    debugPrint('[HomeOctoClient] Starting connection to $_wsUrl');
 
     try {
-      _channel = WebSocketChannel.connect(Uri.parse(_wsUrl));
+      // 获取 Token
+      String token = 'picoclaw-android-local';
+      try {
+        token = await PicoClawChannel.getPicoToken();
+        debugPrint('[HomeOctoClient] Token obtained successfully');
+      } catch (e) {
+        debugPrint('[HomeOctoClient] Failed to get token, using default: $e');
+      }
 
+      debugPrint('[HomeOctoClient] Connecting to $_wsUrl with token');
+
+      // 建立 WebSocket 连接（带 Token 认证）
+      _channel = IOWebSocketChannel.connect(
+        Uri.parse(_wsUrl),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      debugPrint(
+        '[HomeOctoClient] WebSocket channel created, waiting for ready',
+      );
+
+      // 监听 WebSocket ready 状态（参考 Chat 页面实现）
+      _channel!.ready
+          .then((_) {
+            debugPrint(
+              '[HomeOctoClient] WebSocket ready, connection established',
+            );
+            _reconnectAttempts = 0;
+            if (_state != ConnectionState.connected) {
+              _setState(ConnectionState.connected);
+            }
+          })
+          .catchError((e) {
+            debugPrint('[HomeOctoClient] WebSocket ready failed: $e');
+            _setState(ConnectionState.error);
+            _scheduleReconnect();
+          });
+
+      // 监听消息流
       _wsSubscription = _channel!.stream.listen(
         (data) {
           _reconnectAttempts = 0; // 重置重连计数
@@ -43,15 +89,18 @@ class HomeOctoClient {
           _handleMessage(data);
         },
         onError: (error) {
+          debugPrint('[HomeOctoClient] WebSocket error: $error');
           _setState(ConnectionState.error);
           _scheduleReconnect();
         },
         onDone: () {
+          debugPrint('[HomeOctoClient] WebSocket closed');
           _setState(ConnectionState.disconnected);
           _scheduleReconnect();
         },
       );
     } catch (e) {
+      debugPrint('[HomeOctoClient] Connection failed: $e');
       _setState(ConnectionState.error);
       _scheduleReconnect();
     }

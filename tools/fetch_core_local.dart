@@ -6,7 +6,7 @@ import 'package:args/args.dart';
 import 'package:http/http.dart' as http;
 import 'package:archive/archive.dart';
 
-final defaultRepo = 'sipeed/picoclaw';
+final defaultRepo = 'home-ai-union/homeocto';
 late String selectedPlatform;
 
 Future<void> main(List<String> args) async {
@@ -185,16 +185,14 @@ Future<void> main(List<String> args) async {
     }
 
     // Select best Android asset: prefer arch-specific, fall back to universal
-    final chosen = selectBestAsset(
-      assets,
-      'android',
-      arch,
-      ['.zip'],
-      requirePlatformMatch: true,
-    );
+    final chosen = selectBestAsset(assets, 'android', arch, [
+      '.zip',
+    ], requirePlatformMatch: true);
 
     if (chosen == null) {
-      stderr.writeln('No matching Android asset found in release "$androidTag".');
+      stderr.writeln(
+        'No matching Android asset found in release "$androidTag".',
+      );
       exit(3);
     }
 
@@ -225,24 +223,35 @@ Future<void> main(List<String> args) async {
 
     // If extraction created a nested arch directory (e.g., arm64-v8a/ inside jniDir),
     // flatten it by moving .so files up one level.
-    await for (final entity in jniDir.list(recursive: false, followLinks: false)) {
+    await for (final entity in jniDir.list(
+      recursive: false,
+      followLinks: false,
+    )) {
       if (entity is Directory) {
         final subDir = entity;
         final subName = subDir.uri.pathSegments.last;
         // Check if this subdirectory contains .so files (typical arch layout)
         var hasSoFiles = false;
-        await for (final subEntity in subDir.list(recursive: false, followLinks: false)) {
-          if (subEntity is File && subEntity.uri.pathSegments.last.endsWith('.so')) {
+        await for (final subEntity in subDir.list(
+          recursive: false,
+          followLinks: false,
+        )) {
+          if (subEntity is File &&
+              subEntity.uri.pathSegments.last.endsWith('.so')) {
             hasSoFiles = true;
             break;
           }
         }
         if (hasSoFiles) {
           stdout.writeln('Flattening nested arch directory: $subName');
-          await for (final subEntity in subDir.list(recursive: false, followLinks: false)) {
+          await for (final subEntity in subDir.list(
+            recursive: false,
+            followLinks: false,
+          )) {
             if (subEntity is File) {
               final fileName = subEntity.uri.pathSegments.last;
-              final destPath = '${androidJniDir.endsWith(Platform.pathSeparator) ? androidJniDir : androidJniDir + Platform.pathSeparator}$fileName';
+              final destPath =
+                  '${androidJniDir.endsWith(Platform.pathSeparator) ? androidJniDir : androidJniDir + Platform.pathSeparator}$fileName';
               await subEntity.rename(destPath);
               stdout.writeln('Moved: $fileName to $destPath');
             }
@@ -257,7 +266,10 @@ Future<void> main(List<String> args) async {
 
     // Report what was extracted
     var extractedCount = 0;
-    await for (final entity in jniDir.list(recursive: true, followLinks: false)) {
+    await for (final entity in jniDir.list(
+      recursive: true,
+      followLinks: false,
+    )) {
       if (entity is File) {
         final len = await entity.length();
         stdout.writeln('INSTALLED: ${entity.path} ($len bytes)');
@@ -508,7 +520,7 @@ Map<String, String>? selectBestAsset(
       if (nameLower.endsWith(e)) score += 1;
     }
     if (nameLower.contains('_${platformToken}_') ||
-        (nameLower.startsWith('picoclaw_') &&
+        (nameLower.startsWith('homeocto_') &&
             nameLower.contains(platformToken))) {
       score += 8;
     }
