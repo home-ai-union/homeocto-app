@@ -22,8 +22,8 @@ class PicoClawService : Service() {
     companion object {
         private const val TAG = "PicoClawService"
         private const val NOTIFICATION_ID = 1
-        private const val GATEWAY_BINARY_NAME = "libpicoclaw.so"
-        private const val WEB_BINARY_NAME = "libpicoclaw-web.so"
+        private const val GATEWAY_BINARY_NAME = "libhomeocto.so"
+        private const val WEB_BINARY_NAME = "libhomeocto-web.so"
         private const val GATEWAY_PORT = 18790
         private const val WEB_PORT = 18800
         private val ANSI_ESCAPE_REGEX = Regex("\\u001B(?:[@-Z\\\\-_]|\\[[0-?]*[ -/]*[@-~])")

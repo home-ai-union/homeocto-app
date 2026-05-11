@@ -179,6 +179,14 @@ Future<void> main(List<String> args) async {
     try {
       final data = await fetchReleaseJson(repo, androidTag, token);
       assets = (data['assets'] as List).cast<Map<String, dynamic>>();
+      
+      // Print all available assets for debugging
+      stdout.writeln('\nAvailable assets in release:');
+      for (final asset in assets) {
+        stdout.writeln('  - ${asset['name']} (${asset['size']} bytes)');
+        stdout.writeln('    URL: ${asset['browser_download_url']}');
+      }
+      stdout.writeln('');
     } catch (e) {
       stderr.writeln('Failed to fetch release JSON: $e');
       exit(2);
@@ -486,7 +494,14 @@ Future<Map<String, dynamic>> fetchReleaseJson(
   );
   final headers = <String, String>{'Accept': 'application/vnd.github.v3+json'};
   if (token.isNotEmpty) headers['Authorization'] = 'token $token';
+  
+  stdout.writeln('Fetching release from: $api');
+  stdout.writeln('Headers: $headers');
+  
   final resp = await http.get(api, headers: headers);
+  stdout.writeln('Response status: ${resp.statusCode}');
+  stdout.writeln('Response body: ${resp.body}');
+  
   if (resp.statusCode != 200) {
     throw HttpException('Failed to fetch release JSON: ${resp.statusCode}');
   }

@@ -66,9 +66,9 @@
             </intent-filter>
         </activity>
 
-        <!-- HomeOcto 原生前台服务（运行 Go 二进制） -->
+        <!-- PicoClaw 原生前台服务（运行 Go 二进制） -->
         <service
-            android:name=".service.HomeOctoService"
+            android:name=".service.PicoClawService"
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 

@@ -56,16 +56,18 @@ func getDefaultConfig() SyncConfig {
 			"lib\\l10n\\app_en.arb",
 			"lib\\l10n\\app_zh.arb",
 			// Android Kotlin 文件 - 标记 **
-			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\HomeOctoApp.kt",
-			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\HomeOctoMethodChannel.kt",
-			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\HomeOctoService.kt",
+			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\PicoClawService.kt",
 			// 新增 Dart 文件
 			"lib\\src\\ui\\smart_home_page.dart",
 			"lib\\src\\core\\homeocto_client.dart",
 			"lib\\src\\core\\smart_home_provider.dart",
+			"lib\\src\\core\\smart_home_api_service.dart",
+			"tools\\fetch_core_local.dart",
 		},
 		// 需要同步的目录（空，因为都是文件）
-		Dirs: []string{},
+		Dirs: []string{
+			"lib\\src\\ui\\smart_home",
+		},
 		// 图片文件（直接拷贝到 imgs 目录，不做内容替换）
 		ImageFiles: []string{
 			"assets\\app_icon.png",
