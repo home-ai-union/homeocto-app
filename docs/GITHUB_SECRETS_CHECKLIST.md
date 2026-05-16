@@ -217,6 +217,34 @@
 
 ---
 
+##  Pre-release 和 Draft 支持
+
+Workflow 现在支持三种发布模式：
+
+### 1. 正式版本（通过 Tag）
+```bash
+git tag v0.2.7
+git push origin v0.2.7
+```
+自动创建正式版本 Release。
+
+### 2. Pre-release（手动触发）
+1. GitHub Actions → Build and Release APKs → Run workflow
+2. 输入版本号：`v0.2.7-beta.1`
+3. ✅ 勾选 "Mark as pre-release"
+4. 运行 workflow
+
+### 3. Draft（手动触发）
+1. GitHub Actions → Build and Release APKs → Run workflow
+2. 输入版本号：`v0.2.7`
+3. ✅ 勾选 "Create as draft"
+4. 运行 workflow
+5. 在 GitHub Releases 页面编辑并发布
+
+详细使用指南请参考：[PRERELEASE_GUIDE.md](PRERELEASE_GUIDE.md)
+
+---
+
 ## ⚠️ 常见问题
 
 ### Q1: 如果不配置 Firebase/友盟 会怎样？
@@ -250,6 +278,7 @@ A: 通常 1-2 个工作日。审核通过前无法使用友盟功能。
 - [FIREBASE_UMENG_CONFIG.md](FIREBASE_UMENG_CONFIG.md) - Firebase 和友盟详细配置指南
 - [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) - GitHub Actions 完整设置指南
 - [RELEASE_QUICKSTART.md](../RELEASE_QUICKSTART.md) - 快速发布指南
+- [PRERELEASE_GUIDE.md](PRERELEASE_GUIDE.md) - Pre-release 和 Draft 使用指南
 
 ---
 
