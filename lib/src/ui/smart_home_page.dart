@@ -46,9 +46,11 @@ class _SmartHomePageState extends State<SmartHomePage>
               child: TabBar(
                 controller: _tabController,
                 isScrollable: true,
-                labelColor: Theme.of(context).colorScheme.primary,
-                unselectedLabelColor: Theme.of(context).colorScheme.onSurface,
-                indicatorColor: Theme.of(context).colorScheme.primary,
+                labelColor: Theme.of(context).colorScheme.secondary,
+                unselectedLabelColor: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withAlpha(179),
+                indicatorColor: Theme.of(context).colorScheme.secondary,
                 tabs: const [
                   Tab(icon: Icon(Icons.home), text: '小米'),
                   Tab(icon: Icon(Icons.devices), text: '涂鸦'),
