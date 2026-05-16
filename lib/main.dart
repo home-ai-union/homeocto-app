@@ -268,13 +268,6 @@ class _MainShellState extends State<MainShell>
         selectedIcon: Icons.settings,
         colorScheme: colorScheme,
       ),
-      _buildNavButton(
-        index: 4,
-        tooltip: 'Smart Home',
-        icon: Icons.home_outlined,
-        selectedIcon: Icons.home,
-        colorScheme: colorScheme,
-      ),
     ];
 
     return Scaffold(
@@ -304,7 +297,6 @@ class _MainShellState extends State<MainShell>
                 onDirtyChanged: _onConfigDirtyChanged,
                 onSaveFnReady: _onSaveFnReady,
               ),
-              const SmartHomePage(),
             ],
           ),
         ),
