@@ -1,0 +1,208 @@
+name: Build and Release APKs
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v0.2.7)'
+        required: true
+        type: string
+
+env:
+  FLUTTER_VERSION: '3.41.6'
+  JAVA_VERSION: '17'
+
+jobs:
+  build-apks:
+    name: Build APKs (${{ matrix.flavor }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flavor: [homeocto, bazhuayu]
+        include:
+          - flavor: homeocto
+            app_name: HomeOcto
+            package_name: com.homeai.homeocto
+          - flavor: bazhuayu
+            app_name: 八爪鱼
+            package_name: com.homeai.bazhuayu
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Create keystore directory
+        run: mkdir -p android/app/keystore
+
+      - name: Decode keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        if: env.KEYSTORE_BASE64 != ''
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore/release.jks
+
+      - name: Build APK - ${{ matrix.flavor }}
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/android/app/keystore/release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # Firebase Configuration (optional)
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
+          # UMeng Configuration (optional)
+          UMENG_APP_KEY: ${{ secrets.UMENG_APP_KEY }}
+          UMENG_CHANNEL: ${{ matrix.flavor }}
+          # Analytics Provider (firebase, umeng, or none)
+          ANALYTICS_PROVIDER: ${{ secrets.ANALYTICS_PROVIDER || 'none' }}
+        run: |
+          flutter build apk \
+            --flavor ${{ matrix.flavor }} \
+            --release \
+            --dart-define=PICOCLAW_ANALYTICS_PROVIDER=$ANALYTICS_PROVIDER \
+            --dart-define=PICOCLAW_FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID \
+            --dart-define=PICOCLAW_FIREBASE_APP_ID=$FIREBASE_APP_ID \
+            --dart-define=PICOCLAW_FIREBASE_API_KEY=$FIREBASE_API_KEY \
+            --dart-define=PICOCLAW_FIREBASE_MESSAGING_SENDER_ID=$FIREBASE_MESSAGING_SENDER_ID \
+            --dart-define=PICOCLAW_FIREBASE_STORAGE_BUCKET=$FIREBASE_STORAGE_BUCKET \
+            --dart-define=PICOCLAW_UMENG_APP_KEY=$UMENG_APP_KEY \
+            --dart-define=PICOCLAW_UMENG_CHANNEL=$UMENG_CHANNEL \
+            --split-per-abi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.flavor }}
+          path: |
+            build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk
+          retention-days: 30
+
+      - name: Generate release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "## ${{ matrix.app_name }} APK" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "- **Package**: ${{ matrix.package_name }}" >> release_notes.md
+          echo "- **Version**: ${{ github.ref_name }}" >> release_notes.md
+          echo "- **Build Time**: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### SHA256 Checksum" >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
+          sha256sum build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
+
+      - name: Upload release notes
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes-${{ matrix.flavor }}
+          path: release_notes.md
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-apks
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          # Copy APKs with better names
+          cp artifacts/apk-homeocto/app-homeocto-release.apk release/HomeOcto-${{ github.ref_name || github.event.inputs.version }}.apk
+          cp artifacts/apk-bazhuayu/app-bazhuayu-release.apk release/八爪鱼-${{ github.ref_name || github.event.inputs.version }}.apk
+          
+          # Generate combined release notes
+          cat << EOF > RELEASE_NOTES.md
+          # Release ${{ github.ref_name || github.event.inputs.version }}
+          
+          ## 📦 Downloads
+          
+          ### HomeOcto (International Version)
+          - **App Name**: HomeOcto
+          - **Package**: com.homeai.homeocto
+          - **File**: HomeOcto-${{ github.ref_name || github.event.inputs.version }}.apk
+          
+          ### 八爪鱼 (Chinese Version)
+          - **App Name**: 八爪鱼
+          - **Package**: com.homeai.bazhuayu
+          - **File**: 八爪鱼-${{ github.ref_name || github.event.inputs.version }}.apk
+          
+          ##  SHA256 Checksums
+          
+          \`\`\`
+          EOF
+          
+          cd artifacts
+          for dir in apk-*; do
+            find "$dir" -name "*.apk" -exec sha256sum {} \; >> ../RELEASE_NOTES.md
+          done
+          
+          echo "\`\`\`" >> ../RELEASE_NOTES.md
+          cd ..
+          
+          # Generate changelog from git
+          if [ -n "$(git tag --list '${{ github.ref_name || github.event.inputs.version }}')" ]; then
+            echo "" >> RELEASE_NOTES.md
+            echo "## 📝 Changelog" >> RELEASE_NOTES.md
+            echo "" >> RELEASE_NOTES.md
+            PREV_TAG=$(git tag --sort=-v:refname | grep -A1 "${{ github.ref_name || github.event.inputs.version }}" | tail -1)
+            if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ github.ref_name || github.event.inputs.version }}" ]; then
+              git log --pretty=format:"- %s (%h)" $PREV_TAG..${{ github.ref_name || github.event.inputs.version }} >> RELEASE_NOTES.md
+            else
+              git log --pretty=format:"- %s (%h)" -20 >> RELEASE_NOTES.md
+            fi
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name || github.event.inputs.version }}
+          name: Release ${{ github.ref_name || github.event.inputs.version }}
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: false
+          files: |
+            release/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release Summary
+        run: |
+          echo "## ✅ Release Created Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Built APKs" >> $GITHUB_STEP_SUMMARY
+          echo "- HomeOcto: \`HomeOcto-${{ github.ref_name || github.event.inputs.version }}.apk\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 八爪鱼: \`八爪鱼-${{ github.ref_name || github.event.inputs.version }}.apk\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name || github.event.inputs.version }})" >> $GITHUB_STEP_SUMMARY

@@ -7,10 +7,10 @@ from PIL import Image
 import os
 
 # Source icon
-SOURCE_ICON = os.path.join(os.path.dirname(__file__), '..', 'assets', 'app_icon.png')
+SOURCE_ICON = os.path.join(os.path.dirname(__file__), '..', 'docs', 'imgs', 'assets', 'app_icon.png')
 
 # Target directory
-TARGET_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'android', 'app', 'src', 'main', 'res')
+TARGET_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs', 'imgs', 'android', 'app', 'src', 'main', 'res')
 
 # Android mipmap sizes
 MIPMAP_SIZES = {

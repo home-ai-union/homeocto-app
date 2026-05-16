@@ -63,9 +63,23 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    flavorDimensions += "app"
+    productFlavors {
+        create("homeocto") {
+            dimension = "app"
+            applicationId = "com.homeai.homeocto"
+            resValue("string", "app_name", "HomeOcto")
+        }
+        create("bazhuayu") {
+            dimension = "app"
+            applicationId = "com.homeai.bazhuayu"
+            resValue("string", "app_name", "八爪鱼")
+        }
+    }
+
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.homeai.homeocto"
+        // applicationId is now set in productFlavors
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
