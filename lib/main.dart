@@ -10,7 +10,6 @@ import 'package:homeocto_app/src/ui/dashboard_page.dart';
 import 'package:homeocto_app/src/ui/config_page.dart';
 import 'package:homeocto_app/src/ui/webview_page.dart';
 import 'package:homeocto_app/src/ui/log_page.dart';
-import 'package:homeocto_app/src/ui/smart_home_page.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
