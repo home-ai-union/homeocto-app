@@ -1,7 +1,29 @@
-name: Build Android Release
+name: Build and Release Android
 
 on:
+  push:
+    tags:
+      - 'v*'  # Auto-trigger on version tags like v0.2.7
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.2.7). Leave empty to create new tag from current commit.'
+        required: false
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: true
+      variant:
+        description: 'Build variant'
+        required: false
+        type: choice
+        options:
+          - both
+          - international
+          - domestic
+        default: 'both'
 
 permissions:
   contents: write
@@ -12,6 +34,8 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     environment: production
+    outputs:
+      release_tag: ${{ steps.vars.outputs.release_tag }}
     strategy:
       matrix:
         include:
@@ -19,11 +43,53 @@ jobs:
             analytics_provider: firebase
           - variant: domestic
             analytics_provider: umeng
+        # Filter based on workflow input
+      fail-fast: false
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check variant filter
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.variant != 'both' && github.event.inputs.variant != matrix.variant }}
+        run: |
+          echo "Skipping ${{ matrix.variant }} variant (requested: ${{ github.event.inputs.variant }})"
+          exit 0
+
+      - name: Setup release tag
+        id: setup-tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            RELEASE_TAG="${{ github.event.inputs.tag }}"
+            echo "Using provided tag: $RELEASE_TAG"
+          elif [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            RELEASE_TAG="${GITHUB_REF#refs/tags/}"
+            echo "Using pushed tag: $RELEASE_TAG"
+          else
+            # Generate tag from version and date
+            VERSION=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: //;s/+.*//')
+            DATE=$(date -u +%y%m%d)
+            SHORT_SHA=$(git rev-parse --short=6 HEAD)
+            RELEASE_TAG="v${VERSION}-${DATE}-${SHORT_SHA}"
+            echo "Generated tag: $RELEASE_TAG"
+          fi
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Create and push tag (if manual dispatch without tag)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') && !github.event.inputs.tag }}
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.setup-tag.outputs.release_tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" -m "Android Release $RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+          echo "Created and pushed tag: $RELEASE_TAG"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -141,18 +207,14 @@ jobs:
       - name: Prepare release metadata
         id: vars
         run: |
+          RELEASE_TAG="${{ steps.setup-tag.outputs.release_tag }}"
           now=$(date -u +%y%m%d)
           short=$(git rev-parse --short=6 HEAD)
           base_no_prefix="$now-$short"
-          if [ "${{ matrix.variant }}" = "domestic" ]; then
-            release_tag="picoclaw_fui-$base_no_prefix"
-          else
-            release_tag="picoclaw_fui-international-$base_no_prefix"
-          fi
           echo "Computed release base_no_prefix: $base_no_prefix"
-          echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           echo "RELEASE_BASE=$base_no_prefix" >> $GITHUB_ENV
-          echo "RELEASE_TAG=$release_tag" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
           echo "VARIANT=${{ matrix.variant }}" >> $GITHUB_ENV
 
       - name: Collect and rename Android artifacts
@@ -197,3 +259,53 @@ jobs:
         run: |
           rm -f android/app/keystore.jks
           echo "Signing keys cleaned up"
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-android
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts -type f -name "*" | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build-android.outputs.release_tag }}
+          name: "Android Release ${{ needs.build-android.outputs.release_tag }}"
+          body: |
+            ## Android Release
+            
+            **Tag**: ${{ needs.build-android.outputs.release_tag }}
+            **Commit**: ${{ github.sha }}
+            **Build Time**: ${{ github.event.head_commit.timestamp || github.event.workflow_run.head_branch }}
+            
+            ### Included Variants
+            - ✅ International (Firebase Analytics)
+            - ✅ Domestic/China (Umeng Analytics)
+            
+            ### Files
+            - APK files for direct installation
+            - AAB files for Google Play Store
+            
+            ### Installation
+            1. Download the APK for your region
+            2. Enable "Install from Unknown Sources" in Android settings
+            3. Install and enjoy!
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease || true }}
+          files: |
+            artifacts/**/*.apk
+            artifacts/**/*.aab
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
