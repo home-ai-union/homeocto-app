@@ -93,6 +93,7 @@ app.*.map.json
 key.properties
 **/*.keystore
 **/*.jks
+keystore_base64.txt
 
 # Firebase/Google Services (contains sensitive data)
 google-services.json
