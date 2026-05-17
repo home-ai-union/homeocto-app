@@ -24,6 +24,15 @@ on:
           - international
           - domestic
         default: 'both'
+      flavor:
+        description: 'Build flavor (app brand)'
+        required: false
+        type: choice
+        options:
+          - both
+          - homeocto
+          - bazhuayu
+        default: 'both'
 
 permissions:
   contents: write
@@ -41,8 +50,10 @@ jobs:
         include:
           - variant: international
             analytics_provider: firebase
+            flavor: homeocto
           - variant: domestic
             analytics_provider: umeng
+            flavor: bazhuayu
         # Filter based on workflow input
       fail-fast: false
     env:
@@ -57,6 +68,12 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.variant != 'both' && github.event.inputs.variant != matrix.variant }}
         run: |
           echo "Skipping ${{ matrix.variant }} variant (requested: ${{ github.event.inputs.variant }})"
+          exit 0
+
+      - name: Check flavor filter
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.flavor != '' && github.event.inputs.flavor != matrix.flavor }}
+        run: |
+          echo "Skipping ${{ matrix.flavor }} flavor (requested: ${{ github.event.inputs.flavor }})"
           exit 0
 
       - name: Setup release tag
@@ -191,10 +208,10 @@ jobs:
           dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform android --arch arm64 --build-mode release --install-to-build  
 
       - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release --target-platform android-arm,android-arm64 $PICOCLAW_FLUTTER_BUILD_ARGS
+        run: flutter build appbundle --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
 
       - name: Build Android APK (release)
-        run: flutter build apk --release --target-platform android-arm,android-arm64 $PICOCLAW_FLUTTER_BUILD_ARGS
+        run: flutter build apk --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
 
       - name: Verify APK Signature
         if: env.KEYSTORE_PATH != ''
@@ -222,37 +239,46 @@ jobs:
           set -e
           PKG_NAME=homeocto_app
           VARIANT=${VARIANT}
+          FLAVOR=${{ matrix.flavor }}
           TAG=${RELEASE_BASE}
           if [ "$VARIANT" = "domestic" ]; then
-            AAB_NAME=${PKG_NAME}-${TAG}-android-arm_arm64.aab
-            APK_NAME=${PKG_NAME}-${TAG}-android-universal.apk
+            AAB_NAME=${PKG_NAME}-${TAG}-android-${FLAVOR}-arm_arm64.aab
+            APK_NAME=${PKG_NAME}-${TAG}-android-${FLAVOR}-universal.apk
           else
-            AAB_NAME=${PKG_NAME}-${TAG}-android-international-arm_arm64.aab
-            APK_NAME=${PKG_NAME}-${TAG}-android-international-universal.apk
+            AAB_NAME=${PKG_NAME}-${TAG}-android-${FLAVOR}-international-arm_arm64.aab
+            APK_NAME=${PKG_NAME}-${TAG}-android-${FLAVOR}-international-universal.apk
           fi
           rm -f "$AAB_NAME" "$APK_NAME" || true
-          if ls build/app/outputs/bundle/release/*.aab 1> /dev/null 2>&1; then
-            cp build/app/outputs/bundle/release/*.aab "$AAB_NAME"
+          
+          # AAB output path: build/app/outputs/bundle/{flavor}Release/app-{flavor}-release.aab
+          AAB_PATH="build/app/outputs/bundle/${FLAVOR}Release/app-${FLAVOR}-release.aab"
+          if [ -f "$AAB_PATH" ]; then
+            cp "$AAB_PATH" "$AAB_NAME"
           else
-            echo "AAB not found"; exit 1
+            echo "AAB not found at $AAB_PATH"
+            exit 1
           fi
-          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
+          
+          # APK output path: build/app/outputs/flutter-apk/app-{flavor}-release.apk
+          APK_PATH="build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk"
+          if [ -f "$APK_PATH" ]; then
+            cp "$APK_PATH" "$APK_NAME"
           else
-            echo "Release APK not found"; exit 1
+            echo "APK not found at $APK_PATH"
+            exit 1
           fi
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v7
         with:
-          name: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ env.VARIANT == 'domestic' && 'arm_arm64' || 'international-arm_arm64' }}.aab
-          path: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ env.VARIANT == 'domestic' && 'arm_arm64' || 'international-arm_arm64' }}.aab
+          name: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ matrix.flavor }}-${{ env.VARIANT == 'domestic' && 'arm_arm64' || 'international-arm_arm64' }}.aab
+          path: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ matrix.flavor }}-${{ env.VARIANT == 'domestic' && 'arm_arm64' || 'international-arm_arm64' }}.aab
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
         with:
-          name: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ env.VARIANT == 'domestic' && 'universal' || 'international-universal' }}.apk
-          path: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ env.VARIANT == 'domestic' && 'universal' || 'international-universal' }}.apk
+          name: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ matrix.flavor }}-${{ env.VARIANT == 'domestic' && 'universal' || 'international-universal' }}.apk
+          path: homeocto_app-${{ env.RELEASE_BASE }}-android-${{ matrix.flavor }}-${{ env.VARIANT == 'domestic' && 'universal' || 'international-universal' }}.apk
 
       - name: Cleanup signing keys
         if: always()
@@ -290,8 +316,8 @@ jobs:
             **Build Time**: ${{ github.event.head_commit.timestamp || github.event.workflow_run.head_branch }}
             
             ### Included Variants
-            - ✅ International (Firebase Analytics)
-            - ✅ Domestic/China (Umeng Analytics)
+            - ✅ International / HomeOcto (Firebase Analytics)
+            - ✅ Domestic/China / 八爪鱼 (Umeng Analytics)
             
             ### Files
             - APK files for direct installation
