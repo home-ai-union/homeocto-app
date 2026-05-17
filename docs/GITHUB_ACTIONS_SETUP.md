@@ -2,7 +2,7 @@
 
 ## 概述
 
-本项目已配置 GitHub Actions workflow 来自动构建两个版本的 APK 并生成 GitHub Release。
+本项目已配置 GitHub Actions workflow 来自动构建 HomeOcto 应用的多平台版本（Android、Windows、macOS、Linux）。
 
 ## Workflow 触发方式
 
@@ -16,13 +16,15 @@ git push origin v0.2.7
 
 ### 2. 手动触发
 
-在 GitHub Actions 页面手动触发 workflow，需要输入版本号（如 `v0.2.7`）。
+在 GitHub Actions 页面手动触发 `Release (build all + publish)` workflow。
 
 ## 构建产物
 
-每次构建会生成两个 APK：
-- **HomeOcto-v0.2.7.apk** - 国际版
-- **八爪鱼-v0.2.7.apk** - 中文版
+每次完整构建会生成以下产物：
+- **Android**: AAB 和 APK（国际版和国内版）
+- **Windows**: ZIP 压缩包和 NSIS 安装程序
+- **macOS**: DMG 安装包
+- **Linux**: DEB 安装包
 
 ## 配置步骤
 
@@ -58,16 +60,6 @@ base64 release.jks > keystore_base64.txt
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore 密码 | 你的 keystore 密码 |
 | `ANDROID_KEY_ALIAS` | 密钥别名 | release |
 | `ANDROID_KEY_PASSWORD` | 密钥密码 | 你的密钥密码 |
-
-**可选的 Firebase 配置：**
-
-| Secret 名称 | 说明 |
-|------------|------|
-| `FIREBASE_APP_ID` | Firebase App ID |
-| `FIREBASE_API_KEY` | Firebase API Key |
-| `FIREBASE_PROJECT_ID` | Firebase Project ID |
-| `FIREBASE_MESSAGING_SENDER_ID` | Firebase Messaging Sender ID |
-| `FIREBASE_STORAGE_BUCKET` | Firebase Storage Bucket |
 
 ### 第三步：构建 APK
 
@@ -108,15 +100,15 @@ git push origin v0.2.7
    - 构建后 Keystore 文件会自动清理
 
 2. **并行构建**：
-   - 两个版本的 APK 会并行构建，提高效率
-   - 总构建时间约 5-10 分钟
+   - 多个平台的构建会并行执行，提高效率
+   - 总构建时间约 10-15 分钟
 
-3. **APK 分包**：
-   - 使用 `--split-per-abi` 参数，生成针对 CPU 架构优化的 APK
-   - 会生成：arm64-v8a、armeabi-v7a、x86_64
+3. **核心二进制依赖**：
+   - 构建时会自动从 `home-ai-union/homeocto` 仓库下载核心二进制文件
+   - 需要确保该仓库有对应的 Release 资源
 
 4. **标签规范**：
-   - Tag 必须以 `v` 开头（如 `v0.2.7`）
+   - Tag 建议以 `v` 开头（如 `v0.2.7`）
    - 建议遵循语义化版本规范
 
 ## 故障排查
@@ -129,9 +121,13 @@ git push origin v0.2.7
 - `ANDROID_KEY_ALIAS`
 - `ANDROID_KEY_PASSWORD`
 
+### 构建失败：核心二进制文件未找到
+
+确保 `home-ai-union/homeocto` 仓库有对应平台的 Release 资源。
+
 ### 构建失败：Flutter 版本不匹配
 
-检查 `build-release.yml` 中的 `FLUTTER_VERSION` 是否与项目匹配。
+检查 workflow 中的 Flutter 版本是否与项目匹配。
 
 ### Release 未生成
 

@@ -1,0 +1,17 @@
+name: Daily Build
+
+on:
+  schedule:
+    - cron: '0 23 * * *'  # daily at 23:00 UTC (07:00 CST)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/release_full.yml
+    with:
+      release_prefix: nightly
+      use_fixed_tag: true
+    secrets: inherit
