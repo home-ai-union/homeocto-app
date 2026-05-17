@@ -69,10 +69,18 @@ jobs:
         if: env.KEYSTORE_BASE64 != ''
         run: |
           echo "Decoding keystore from Base64..."
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/keystore/release.jks
+          # Remove any whitespace/newlines and decode
+          echo "$KEYSTORE_BASE64" | tr -d '\n\r ' | base64 --decode > android/app/keystore/release.jks
           if [ -f "android/app/keystore/release.jks" ]; then
             echo "Keystore file created successfully"
             ls -lh android/app/keystore/release.jks
+            # Verify the file size
+            FILE_SIZE=$(stat -f%z android/app/keystore/release.jks 2>/dev/null || stat -c%s android/app/keystore/release.jks)
+            echo "Keystore file size: $FILE_SIZE bytes"
+            if [ "$FILE_SIZE" -lt 1000 ]; then
+              echo "WARNING: Keystore file size is unusually small, may be corrupted"
+              exit 1
+            fi
           else
             echo "ERROR: Failed to create keystore file"
             exit 1
