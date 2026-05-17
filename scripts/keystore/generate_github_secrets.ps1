@@ -23,29 +23,29 @@ Write-Host ""
 
 Write-Host "1. ANDROID_KEYSTORE_BASE64" -ForegroundColor Green
 Write-Host "(Copy the ENTIRE content below, make sure NO extra spaces or newlines)" -ForegroundColor Yellow
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host $base64 -ForegroundColor White
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host ""
 Write-Host "[INFO] Base64 length: $($base64.Length) characters" -ForegroundColor Cyan
 Write-Host ""
 
 Write-Host "2. ANDROID_KEYSTORE_PASSWORD" -ForegroundColor Green
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host "XxkfZymrMKC8T7Y3" -ForegroundColor White
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "3. ANDROID_KEY_ALIAS" -ForegroundColor Green
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host "homeocto_release" -ForegroundColor White
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "4. ANDROID_KEY_PASSWORD" -ForegroundColor Green
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host "bHB4qX6FmMKs01jn" -ForegroundColor White
-Write-Host "─" * 80 -ForegroundColor Gray
+Write-Host "================================================================================" -ForegroundColor Gray
 Write-Host ""
 
 Write-Host "==========================================" -ForegroundColor Cyan
