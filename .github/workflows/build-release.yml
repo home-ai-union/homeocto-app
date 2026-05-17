@@ -72,17 +72,32 @@ jobs:
           # Remove any whitespace/newlines and decode
           echo "$KEYSTORE_BASE64" | tr -d '\n\r ' | base64 --decode > android/app/keystore/release.jks
           if [ -f "android/app/keystore/release.jks" ]; then
-            echo "Keystore file created successfully"
+            echo "✅ Keystore file created successfully"
             ls -lh android/app/keystore/release.jks
+            
             # Verify the file size
             FILE_SIZE=$(stat -f%z android/app/keystore/release.jks 2>/dev/null || stat -c%s android/app/keystore/release.jks)
-            echo "Keystore file size: $FILE_SIZE bytes"
+            echo "📏 Keystore file size: $FILE_SIZE bytes"
             if [ "$FILE_SIZE" -lt 1000 ]; then
-              echo "WARNING: Keystore file size is unusually small, may be corrupted"
+              echo "❌ WARNING: Keystore file size is unusually small, may be corrupted"
               exit 1
             fi
+            
+            # Calculate MD5 of the keystore file
+            KEYSTORE_MD5=$(md5sum android/app/keystore/release.jks | awk '{print $1}')
+            echo "🔐 Keystore file MD5: $KEYSTORE_MD5"
+            
+            # Verify keystore with keytool
+            echo ""
+            echo "🔍 Verifying keystore with keytool..."
+            keytool -list -keystore android/app/keystore/release.jks \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -alias "$KEY_ALIAS" 2>&1 | head -20
+            
+            echo ""
+            echo "📋 Keystore verification complete"
           else
-            echo "ERROR: Failed to create keystore file"
+            echo "❌ ERROR: Failed to create keystore file"
             exit 1
           fi
 
@@ -104,6 +119,22 @@ jobs:
           # Analytics Provider (firebase, umeng, or none)
           ANALYTICS_PROVIDER: ${{ secrets.ANALYTICS_PROVIDER || 'none' }}
         run: |
+          # Print diagnostic information (passwords are masked by GitHub)
+          echo "🔍 Build Configuration Diagnostics:"
+          echo "  Keystore path: $KEYSTORE_PATH"
+          echo "  Keystore exists: $([ -f "$KEYSTORE_PATH" ] && echo 'YES' || echo 'NO')"
+          echo "  Key alias: $KEY_ALIAS"
+          echo "  Keystore password length: ${#KEYSTORE_PASSWORD}"
+          echo "  Key password length: ${#KEY_PASSWORD}"
+          echo "  Passwords match: $([ "$KEYSTORE_PASSWORD" = "$KEY_PASSWORD" ] && echo 'YES' || echo 'NO')"
+          
+          # Calculate MD5 of passwords for verification
+          KEYSTORE_PASS_MD5=$(echo -n "$KEYSTORE_PASSWORD" | md5sum | awk '{print $1}')
+          KEY_PASS_MD5=$(echo -n "$KEY_PASSWORD" | md5sum | awk '{print $1}')
+          echo "  Keystore password MD5: $KEYSTORE_PASS_MD5"
+          echo "  Key password MD5: $KEY_PASS_MD5"
+          echo ""
+          
           flutter build apk \
             --flavor ${{ matrix.flavor }} \
             --release \
