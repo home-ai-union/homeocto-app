@@ -208,26 +208,10 @@ jobs:
           dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform android --arch arm64 --build-mode release --install-to-build  
 
       - name: Build Android App Bundle (AAB)
-        run: |
-          flutter build appbundle --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
-          # Debug: show actual output paths
-          echo "=== AAB Output Directory ==="
-          find build/app/outputs/bundle -name "*.aab" 2>/dev/null || echo "No AAB found in bundle/"
-          ls -la build/app/outputs/bundle/ 2>/dev/null || echo "bundle/ directory not found"
-          if [ -d "build/app/outputs/bundle/${{ matrix.flavor }}Release" ]; then
-            ls -la build/app/outputs/bundle/${{ matrix.flavor }}Release/
-          fi
-          if [ -d "build/app/outputs/bundle/release" ]; then
-            ls -la build/app/outputs/bundle/release/
-          fi
+        run: flutter build appbundle --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
 
       - name: Build Android APK (release)
-        run: |
-          flutter build apk --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
-          # Debug: show actual output paths
-          echo "=== APK Output Directory ==="
-          find build/app/outputs/flutter-apk -name "*.apk" 2>/dev/null || echo "No APK found"
-          ls -la build/app/outputs/flutter-apk/ 2>/dev/null || echo "flutter-apk/ directory not found"
+        run: flutter build apk --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
 
       - name: Verify APK Signature
         if: env.KEYSTORE_PATH != ''
@@ -265,37 +249,22 @@ jobs:
             APK_NAME=${PKG_NAME}-${TAG}-android-${FLAVOR}-international-universal.apk
           fi
           rm -f "$AAB_NAME" "$APK_NAME" || true
-          # Try different possible AAB output paths
-          AAB_FOUND=false
-          if ls build/app/outputs/bundle/${FLAVOR}Release/*.aab 1> /dev/null 2>&1; then
-            cp build/app/outputs/bundle/${FLAVOR}Release/*.aab "$AAB_NAME"
-            AAB_FOUND=true
-          elif ls build/app/outputs/bundle/release/*.aab 1> /dev/null 2>&1; then
-            cp build/app/outputs/bundle/release/*.aab "$AAB_NAME"
-            AAB_FOUND=true
-          fi
           
-          if [ "$AAB_FOUND" = false ]; then
-            echo "AAB not found for flavor ${FLAVOR}"
-            echo "Available bundles:"
-            find build/app/outputs/bundle -name "*.aab" 2>/dev/null || echo "None"
+          # AAB output path: build/app/outputs/bundle/{flavor}Release/app-{flavor}-release.aab
+          AAB_PATH="build/app/outputs/bundle/${FLAVOR}Release/app-${FLAVOR}-release.aab"
+          if [ -f "$AAB_PATH" ]; then
+            cp "$AAB_PATH" "$AAB_NAME"
+          else
+            echo "AAB not found at $AAB_PATH"
             exit 1
           fi
           
-          # Try different possible APK output paths
-          APK_FOUND=false
-          if [ -f build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk ]; then
-            cp build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk "$APK_NAME"
-            APK_FOUND=true
-          elif [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
-            cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
-            APK_FOUND=true
-          fi
-          
-          if [ "$APK_FOUND" = false ]; then
-            echo "Release APK not found for flavor ${FLAVOR}"
-            echo "Available APKs:"
-            find build/app/outputs/flutter-apk -name "*.apk" 2>/dev/null || echo "None"
+          # APK output path: build/app/outputs/flutter-apk/app-{flavor}-release.apk
+          APK_PATH="build/app/outputs/flutter-apk/app-${FLAVOR}-release.apk"
+          if [ -f "$APK_PATH" ]; then
+            cp "$APK_PATH" "$APK_NAME"
+          else
+            echo "APK not found at $APK_PATH"
             exit 1
           fi
 
