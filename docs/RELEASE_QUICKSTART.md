@@ -38,17 +38,21 @@ git push origin v0.2.7
 
 ### 等待构建完成
 
-- ⏱️ 构建时间：约 5-10 分钟
-- 📍 查看进度：GitHub → Actions → Build and Release APKs
+- ⏱️ 构建时间：约 10-15 分钟
+- 📍 查看进度：GitHub → Actions → Release (build all + publish)
 - ✅ 完成后自动生成 GitHub Release
 
-### 下载 APK
+### 下载产物
 
 访问：https://github.com/你的用户名/homeocto-app/releases
 
-你会看到两个文件：
-- `HomeOcto-v0.2.7.apk` - 国际版
-- `八爪鱼-v0.2.7.apk` - 中文版
+每次完整构建会生成：
+- `homeocto_app-*-android-*.apk` - Android APK
+- `homeocto_app-*-android-*.aab` - Android App Bundle
+- `homeocto_app-*-windows-x64.zip` - Windows 压缩包
+- `homeocto_app-*-windows-x64-installer.exe` - Windows 安装程序
+- `homeocto_app-*-macos-universal.dmg` - macOS 安装包
+- `homeocto_app-*-linux-x86_64.deb` - Linux 安装包
 
 ---
 
@@ -58,8 +62,10 @@ git push origin v0.2.7
 
 每次 Release 会生成：
 
-✅ 2 个 APK 文件（HomeOcto + 八爪鱼）  
-✅ SHA256 校验和  
+✅ Android: AAB + APK（国际版和国内版）  
+✅ Windows: ZIP + NSIS 安装程序  
+✅ macOS: DMG 安装包  
+✅ Linux: DEB 安装包  
 ✅ 自动生成的变更日志  
 ✅ 版本信息说明
 
@@ -67,9 +73,9 @@ git push origin v0.2.7
 
 如果不方便使用 tag，可以手动触发：
 
-1. GitHub → Actions → Build and Release APKs
+1. GitHub → Actions → Release (build all + publish)
 2. 点击 "Run workflow"
-3. 输入版本号：`v0.2.7`
+3. 可选择输入 release_prefix（默认：homeocto_app）
 4. 点击 "Run workflow"
 
 ### 本地测试构建
@@ -77,14 +83,21 @@ git push origin v0.2.7
 在推送前，可以先在本地测试：
 
 ```bash
-# 测试 HomeOcto 版本
-flutter build apk --flavor homeocto --release
+# 获取依赖
+flutter pub get
 
-# 测试 八爪鱼 版本
-flutter build apk --flavor bazhuayu --release
+# 下载核心二进制文件
+dart run tools/fetch_core_local.dart --platform android --arch arm64
 
-# 生成的 APK 位置
-# build/app/outputs/flutter-apk/
+# 测试 Android 构建
+flutter build apk --release
+
+# 测试 Windows 构建
+flutter build windows --release
+
+# 生成的产物位置
+# Android: build/app/outputs/flutter-apk/
+# Windows: build/windows/x64/runner/Release/
 ```
 
 ---
@@ -111,24 +124,29 @@ powershell scripts\keystore_to_base64.ps1 release.jks
 
 1. 检查 Secrets 是否正确配置
 2. 查看 GitHub Actions 日志
-3. 确保 Flutter 版本匹配（3.41.6）
+3. 确保 `home-ai-union/homeocto` 仓库有对应的核心二进制 Release 资源
 4. 检查网络连接
 
 ### Q: 如何修改 Flutter 版本？
 
-编辑 `.github/workflows/build-release.yml`：
+编辑 `.github/workflows/release_full.yml`，修改 Flutter action 的配置：
 ```yaml
-env:
-  FLUTTER_VERSION: '3.41.6'  # 修改这里
+- name: Setup Flutter
+  uses: subosito/flutter-action@v2
+  with:
+    channel: 'stable'  # 或指定版本: flutter-version: '3.x.x'
 ```
 
 ---
 
 ## 📚 相关文件
 
-- `.github/workflows/build-release.yml` - GitHub Actions 配置
+- `.github/workflows/release_full.yml` - 完整多平台构建配置
+- `.github/workflows/android-release.yml` - Android 单独构建
+- `.github/workflows/windows-release.yml` - Windows 单独构建
+- `.github/homeocto_installer.nsi` - Windows NSIS 安装脚本
 - `docs/GITHUB_ACTIONS_SETUP.md` - 详细配置指南
-- `scripts/keystore_to_base64.ps1` - Keystore 转换工具
+- `tools/fetch_core_local.dart` - 核心二进制下载工具
 
 ---
 
@@ -147,10 +165,10 @@ git push origin develop
 git tag v0.2.8
 git push origin v0.2.8
 
-# 4. 等待 5-10 分钟
+# 4. 等待 10-15 分钟
 
-# 5. 下载 APK
-# https://github.com/你的用户名/homeocto-app/releases/tag/v0.2.8
+# 5. 下载产物
+# https://github.com/你的用户名/homeocto-app/releases/tag/homeocto_app-v0.2.8
 ```
 
 **就是这么简单！** 🎊

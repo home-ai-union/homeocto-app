@@ -1,0 +1,763 @@
+name: Release (build all + publish)
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      release_prefix:
+        description: 'Release tag/name prefix (e.g. homeocto_app, testly, nightly)'
+        type: string
+        default: 'homeocto_app'
+      use_fixed_tag:
+        description: 'Use release_prefix directly as the tag (no date/SHA suffix). Old artifacts are replaced in place.'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      matrix:
+        include:
+          - variant: international
+            analytics_provider: firebase
+          - variant: domestic
+            analytics_provider: umeng
+    outputs:
+      release_base: ${{ steps.vars.outputs.release_base }}
+      artifact_suffix: ${{ steps.vars.outputs.artifact_suffix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Android command-line tools and SDK components (API 29)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip wget
+          ANDROID_SDK_ROOT=$HOME/Android/Sdk
+          mkdir -p $ANDROID_SDK_ROOT
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O /tmp/cmdline-tools.zip
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/cmdline-tools
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools/latest
+          mv /tmp/cmdline-tools/cmdline-tools/* $ANDROID_SDK_ROOT/cmdline-tools/latest/
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
+          yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-29" "build-tools;29.0.3"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Cache pub and Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.pub-cache
+            ~/.gradle/caches
+          key: ${{ runner.os }}-flutter-${{ matrix.variant }}-${{ hashFiles('**/pubspec.yaml') }}-${{ hashFiles('**/gradle-wrapper.properties') }}
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
+      - name: Setup Android Signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "Error: No signing configuration found. Release builds require signing keys."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore.jks
+          echo "KEYSTORE_PATH=$PWD/android/app/keystore.jks" >> $GITHUB_ENV
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+          echo "KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
+          echo "Android signing configured"
+
+      - name: Set build args for international (Firebase)
+        if: matrix.variant == 'international'
+        run: |
+          echo "PICOCLAW_FLUTTER_BUILD_ARGS=--dart-define=PICOCLAW_ANALYTICS_PROVIDER=firebase --dart-define=PICOCLAW_FIREBASE_APP_ID=${{ secrets.PICOCLAW_FIREBASE_APP_ID }} --dart-define=PICOCLAW_FIREBASE_API_KEY=${{ secrets.PICOCLAW_FIREBASE_API_KEY }} --dart-define=PICOCLAW_FIREBASE_PROJECT_ID=${{ secrets.PICOCLAW_FIREBASE_PROJECT_ID }} --dart-define=PICOCLAW_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.PICOCLAW_FIREBASE_MESSAGING_SENDER_ID }}" >> $GITHUB_ENV
+
+      - name: Set build args for domestic (Umeng)
+        if: matrix.variant == 'domestic'
+        run: |
+          echo "PICOCLAW_FLUTTER_BUILD_ARGS=--dart-define=PICOCLAW_ANALYTICS_PROVIDER=umeng --dart-define=PICOCLAW_UMENG_APP_KEY=${{ secrets.PICOCLAW_UMENG_APP_KEY }} --dart-define=PICOCLAW_UMENG_CHANNEL=${{ secrets.PICOCLAW_UMENG_CHANNEL }}" >> $GITHUB_ENV
+
+      - name: fetch/install core
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform android --arch arm64 --build-mode release --install-to-build
+
+      - name: Build Android App Bundle (AAB)
+        run: flutter build appbundle --release --target-platform android-arm,android-arm64 $PICOCLAW_FLUTTER_BUILD_ARGS
+
+      - name: Build Android APK (release)
+        run: flutter build apk --release --target-platform android-arm,android-arm64 $PICOCLAW_FLUTTER_BUILD_ARGS
+
+
+      - name: Verify APK Signature
+        if: env.KEYSTORE_PATH != ''
+        run: |
+          echo "Verifying APK signature..."
+          BUILD_TOOLS=$(ls -d $ANDROID_SDK_ROOT/build-tools/*/ | sort -V | tail -n 1)
+          $BUILD_TOOLS/apksigner verify -v build/app/outputs/flutter-apk/app-release.apk || true
+          echo "Signature verification completed"
+
+      - name: Prepare release metadata
+        id: vars
+        run: |
+          now=$(date -u +%y%m%d)
+          short=$(git rev-parse --short=6 $GITHUB_SHA)
+          prefix="${{ inputs.release_prefix || 'picoclaw_fui' }}"
+          if [[ "${{ inputs.use_fixed_tag }}" == "true" ]]; then
+            release_tag="${prefix}"
+            base_no_prefix="$release_tag"
+            artifact_suffix="-${prefix}-${now}-${short}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            base_no_prefix="${GITHUB_REF#refs/tags/}"
+            echo "Tag detected: $base_no_prefix"
+            # Keep tagged release assets on stable filenames without a version suffix.
+            artifact_suffix=""
+            release_tag="${prefix}-${base_no_prefix}"
+          else
+            base_no_prefix="$now-$short"
+            artifact_suffix="-${base_no_prefix}"
+            release_tag="${prefix}-${base_no_prefix}"
+          fi
+          echo "release_base=$base_no_prefix" >> $GITHUB_OUTPUT
+          echo "artifact_suffix=$artifact_suffix" >> $GITHUB_OUTPUT
+          echo "RELEASE_BASE=$base_no_prefix" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$release_tag" >> $GITHUB_ENV
+          echo "ARTIFACT_SUFFIX=$artifact_suffix" >> $GITHUB_ENV
+          echo "VARIANT=${{ matrix.variant }}" >> $GITHUB_ENV
+
+      - name: Collect and rename Android artifacts
+        run: |
+          set -e
+          PKG_NAME=homeocto_app
+          VARIANT=${VARIANT}
+          SUFFIX=${ARTIFACT_SUFFIX}
+          if [ "$VARIANT" = "domestic" ]; then
+            AAB_NAME=${PKG_NAME}${SUFFIX}-android-arm_arm64.aab
+            APK_NAME=${PKG_NAME}${SUFFIX}-android-universal.apk
+          else
+            AAB_NAME=${PKG_NAME}${SUFFIX}-android-international-arm_arm64.aab
+            APK_NAME=${PKG_NAME}${SUFFIX}-android-international-universal.apk
+          fi
+          rm -f "$AAB_NAME" "$APK_NAME" || true
+          if ls build/app/outputs/bundle/release/*.aab 1> /dev/null 2>&1; then
+            cp build/app/outputs/bundle/release/*.aab "$AAB_NAME"
+          else
+            echo "AAB not found"; exit 1
+          fi
+          if [ -f build/app/outputs/flutter-apk/app-release.apk ]; then
+            cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
+          else
+            echo "Release APK not found"; exit 1
+          fi
+
+      # core binaries are installed into build outputs; avoid uploading app/bin
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-${{ env.VARIANT == 'domestic' && 'arm_arm64' || 'international-arm_arm64' }}.aab
+          path: homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-${{ env.VARIANT == 'domestic' && 'arm_arm64' || 'international-arm_arm64' }}.aab
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-${{ env.VARIANT == 'domestic' && 'universal' || 'international-universal' }}.apk
+          path: homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-${{ env.VARIANT == 'domestic' && 'universal' || 'international-universal' }}.apk
+
+      - name: Cleanup signing keys
+        if: always()
+        run: |
+          rm -f android/app/keystore.jks
+          echo "Signing keys cleaned up"
+
+  build-macos:
+    runs-on: macos-latest
+    needs: []
+    outputs:
+      release_base: ${{ steps.vars.outputs.release_base }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Fetch macOS core (arm64)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dart run tools/fetch_core_local.dart \
+            --repo home-ai-union/homeocto --tag latest \
+            --out-dir app/bin_arm64 \
+            --platform macos --arch arm64 \
+            --build-mode release --no-install-to-build
+
+      - name: Fetch macOS core (x86_64)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dart run tools/fetch_core_local.dart \
+            --repo home-ai-union/homeocto --tag latest \
+            --out-dir app/bin_x86_64 \
+            --platform macos --arch x86_64 \
+            --build-mode release --no-install-to-build
+
+      - name: Create universal (fat) core binaries
+        run: |
+          set -e
+          mkdir -p app/bin
+          for bin in picoclaw picoclaw-launcher; do
+            arm64="app/bin_arm64/$bin"
+            x86="app/bin_x86_64/$bin"
+            out="app/bin/$bin"
+            if [ -f "$arm64" ] && [ -f "$x86" ]; then
+              lipo -create "$arm64" "$x86" -output "$out"
+              echo "Created fat binary: $out"
+            elif [ -f "$arm64" ]; then
+              cp "$arm64" "$out"
+              echo "Only arm64 found, using single-arch for $bin"
+            elif [ -f "$x86" ]; then
+              cp "$x86" "$out"
+              echo "Only x86_64 found, using single-arch for $bin"
+            else
+              echo "ERROR: $bin not found in either arch"; exit 1
+            fi
+            chmod +x "$out"
+            lipo -info "$out" || true
+          done
+
+      - name: Build macOS Flutter app
+        run: flutter build macos --release
+
+      - name: Prepare release metadata
+        id: vars
+        run: |
+          now=$(date -u +%y%m%d)
+          short=$(git rev-parse --short=6 $GITHUB_SHA)
+          prefix="${{ inputs.release_prefix || 'picoclaw_fui' }}"
+          if [[ "${{ inputs.use_fixed_tag }}" == "true" ]]; then
+            release_tag="${prefix}"
+            base_no_prefix="$release_tag"
+            artifact_suffix="-${prefix}-${now}-${short}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            base_no_prefix="${GITHUB_REF#refs/tags/}"
+            echo "Tag detected: $base_no_prefix"
+            # Keep tagged release assets on stable filenames without a version suffix.
+            artifact_suffix=""
+            release_tag="${prefix}-${base_no_prefix}"
+          else
+            base_no_prefix="$now-$short"
+            artifact_suffix="-${base_no_prefix}"
+            release_tag="${prefix}-${base_no_prefix}"
+          fi
+          echo "release_base=$base_no_prefix" >> $GITHUB_OUTPUT
+          echo "RELEASE_BASE=$base_no_prefix" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$release_tag" >> $GITHUB_ENV
+          echo "ARTIFACT_SUFFIX=$artifact_suffix" >> $GITHUB_ENV
+
+      - name: Inject binaries, sign, and package DMG
+        run: |
+          set -e
+          out_dir="build/macos/Build/Products/Release"
+          if [ ! -d "$out_dir" ]; then
+            echo "Release output not found at $out_dir"; exit 1
+          fi
+          app_path=$(find "$out_dir" -maxdepth 1 -name "*.app" -type d | head -1)
+          if [ -z "$app_path" ]; then
+            echo "No .app bundle found in $out_dir"
+            ls -la "$out_dir"
+            exit 1
+          fi
+          echo "Found .app: $app_path"
+          macos_bin="$app_path/Contents/MacOS"
+          if [ ! -d "$macos_bin" ]; then
+            echo "Contents/MacOS not found in $app_path"; exit 1
+          fi
+          for bin in picoclaw picoclaw-launcher; do
+            if [ -f "app/bin/$bin" ]; then
+              cp "app/bin/$bin" "$macos_bin/$bin"
+              chmod +x "$macos_bin/$bin"
+              echo "Injected: $macos_bin/$bin"
+              lipo -info "$macos_bin/$bin" || true
+            else
+              echo "ERROR: app/bin/$bin not found"; exit 1
+            fi
+          done
+          codesign --force --deep --sign - "$app_path"
+          codesign --verify --deep --strict "$app_path"
+          echo "Codesign OK"
+          dest="homeocto_app${ARTIFACT_SUFFIX}-macos-universal.dmg"
+          rm -f "$dest" || true
+          stage_dir=$(mktemp -d)
+          cp -R "$app_path" "$stage_dir/"
+          ln -s /Applications "$stage_dir/Applications"
+          hdiutil create -volname "HomeOcto" -srcfolder "$stage_dir" -ov -format UDZO "$dest"
+          rm -rf "$stage_dir"
+          ls -lh "$dest"
+          echo "DMG created: $dest"
+
+      - name: Upload macOS DMG artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app${{ env.ARTIFACT_SUFFIX }}-macos-universal.dmg
+          path: homeocto_app${{ env.ARTIFACT_SUFFIX }}-macos-universal.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    needs: []
+    outputs:
+      release_base: ${{ steps.vars.outputs.release_base }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      
+
+      - name: Locate MSBuild and add to PATH
+        shell: powershell
+        run: |
+          Write-Output "Locating MSBuild with vswhere and adding to PATH"
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) {
+            Write-Error "vswhere not found at $vswhere"
+            exit 1
+          }
+          $inst = & $vswhere -latest -requires Microsoft.Component.MSBuild -products * -property installationPath
+          if (-not $inst) {
+            Write-Error "Visual Studio with MSBuild not found"
+            exit 1
+          }
+          $msbuildDir = Join-Path $inst 'MSBuild\Current\Bin'
+          Write-Output "Found MSBuild dir: $msbuildDir"
+          Add-Content -Path $env:GITHUB_PATH -Value $msbuildDir
+
+      - name: Verify VS toolchain
+        shell: powershell
+        run: |
+          Write-Output "--- Verify MSVC / MSBuild / NuGet ---"
+          msbuild -version
+          if (Get-Command cl.exe -ErrorAction SilentlyContinue) { cl.exe /? } else { Write-Output 'cl.exe not found' }
+          if (-not (Get-Command nuget -ErrorAction SilentlyContinue)) { choco install nuget.commandline -y }
+          nuget help
+
+      - name: Fetch Windows core binaries
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform windows --arch x86_64 --build-mode release --install-to-build
+
+      - name: Build Windows release (build + fetch/install core)
+        shell: powershell
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          flutter build windows --release
+
+      - name: Prepare release metadata
+        id: vars
+        shell: powershell
+        run: |
+          $now = Get-Date -Format 'yyMMdd'
+          $short = git rev-parse --short=6 $env:GITHUB_SHA
+          $prefix = "${{ inputs.release_prefix || 'picoclaw_fui' }}"
+          if ("${{ inputs.use_fixed_tag }}" -eq "true") {
+            $release_tag = $prefix
+            $base_no_prefix = $release_tag
+            $artifact_suffix = "-${prefix}-${now}-${short}"
+          } elseif ($env:GITHUB_REF -match '^refs/tags/v') {
+            $base_no_prefix = $env:GITHUB_REF -replace '^refs/tags/', ''
+            Write-Output "Tag detected: $base_no_prefix"
+            # Keep tagged release assets on stable filenames without a version suffix.
+            $artifact_suffix = ""
+            $release_tag = "${prefix}-$base_no_prefix"
+          } else {
+            $base_no_prefix = "${now}-${short}"
+            $artifact_suffix = "-$base_no_prefix"
+            $release_tag = "${prefix}-$base_no_prefix"
+          }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "release_base=$base_no_prefix"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_BASE=$base_no_prefix"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$release_tag"
+          Add-Content -Path $env:GITHUB_ENV -Value "ARTIFACT_SUFFIX=$artifact_suffix"
+          # DISPLAY_VERSION: pubspec version + build-type qualifier for installer registry
+          $pubspecVer = (Select-String -Path 'pubspec.yaml' -Pattern '^version:' | Select-Object -First 1).Line -replace 'version:\s*', '' -replace '\+.*', ''
+          if ($base_no_prefix -match '^v?[0-9]') {
+            $displayVersion = $pubspecVer
+          } else {
+            $displayVersion = "${pubspecVer}-${base_no_prefix}"
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "DISPLAY_VERSION=$displayVersion"
+
+      - name: Zip Release
+        shell: powershell
+        run: |
+          $dest = "homeocto_app${env:ARTIFACT_SUFFIX}-windows-x64.zip"
+          Compress-Archive -Path 'build\\windows\\x64\\runner\\Release\\*' -DestinationPath $dest -Force
+
+      # core binaries are installed into build outputs; avoid uploading app/bin
+
+      - name: Upload Windows ZIP artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app${{ env.ARTIFACT_SUFFIX }}-windows-x64.zip
+          path: homeocto_app${{ env.ARTIFACT_SUFFIX }}-windows-x64.zip
+      
+      - name: Stage installer files
+        shell: powershell
+        run: |
+          Write-Output "Staging installer files into 'installer_stage'"
+          $stage = Join-Path $PWD 'installer_stage'
+          Remove-Item -Recurse -Force $stage -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          $releaseDir = Join-Path $PWD 'build\\windows\\x64\\runner\\Release'
+          if (Test-Path $releaseDir) {
+            Copy-Item -Path (Join-Path $releaseDir '*') -Destination $stage -Recurse -Force
+          } else {
+            Write-Output "No windows Release dir found at $releaseDir"
+          }
+          $appBin = Join-Path $PWD 'app\\bin'
+          if (Test-Path $appBin) {
+            Copy-Item -Path (Join-Path $appBin '*') -Destination (Join-Path $stage 'app\\bin') -Recurse -Force
+          }
+          if (Test-Path 'assets\\icon.ico') { Copy-Item -Path 'assets\\icon.ico' -Destination $stage -Force }
+          if (Test-Path 'assets\\app_icon.png') { Copy-Item -Path 'assets\\app_icon.png' -Destination $stage -Force }
+          Add-Content -Path $env:GITHUB_ENV -Value "INSTALLER_STAGE=$stage"
+
+      - name: Install NSIS
+        shell: powershell
+        id: install-nsis
+        run: |
+          Write-Output "Ensure NSIS is installed"
+          $nsisPath = $null
+
+          # Check if already installed
+          $nsisCmd = Get-Command makensis -ErrorAction SilentlyContinue
+          if ($nsisCmd) { $nsisPath = $nsisCmd.Path }
+
+          if (-not $nsisPath) {
+            # Try Chocolatey with retry
+            $chocoSuccess = $false
+            for ($i = 1; $i -le 3 -and -not $chocoSuccess; $i++) {
+              Write-Output "Attempting Chocolatey install (attempt $i/3)..."
+              choco install nsis -y --no-progress
+              if ($LASTEXITCODE -eq 0) { $chocoSuccess = $true }
+              else { Start-Sleep -Seconds 10 }
+            }
+
+            if (-not $chocoSuccess) {
+              Write-Output "Chocolatey failed, downloading NSIS directly..."
+              $nsisUrl = "https://downloads.sourceforge.net/project/nsis/NSIS%203/3.11/nsis-3.11.zip"
+              $nsisZip = "$env:TEMP\nsis.zip"
+              $nsisDir = "$env:TEMP\nsis"
+              Invoke-WebRequest -Uri $nsisUrl -OutFile $nsisZip -UseBasicParsing
+              Expand-Archive -Path $nsisZip -DestinationPath $nsisDir -Force
+              $env:PATH += ";$nsisDir\nsis-3.11"
+              Add-Content -Path $env:GITHUB_PATH -Value "$nsisDir\nsis-3.11"
+            }
+
+            $nsisCmd = Get-Command makensis -ErrorAction SilentlyContinue
+            if ($nsisCmd) { $nsisPath = $nsisCmd.Path }
+          }
+
+          $candidates = @(
+            (Join-Path $env:ProgramFiles 'NSIS\makensis.exe'),
+            (Join-Path ${env:ProgramFiles(x86)} 'NSIS\makensis.exe'),
+            (Join-Path $env:ProgramData 'chocolatey\bin\makensis.exe'),
+            (Join-Path $env:ProgramData 'chocolatey\lib\nsis\tools\makensis.exe'),
+            (Join-Path $env:ChocolateyInstall 'bin\makensis.exe')
+          )
+          foreach ($p in $candidates) {
+            if (-not $nsisPath -and (Test-Path $p)) { $nsisPath = $p; break }
+          }
+
+          if (-not $nsisPath) {
+            Write-Error "makensis not found after installation. Checked: $($candidates -join ';')"
+            exit 1
+          }
+          Write-Output "Found makensis at $nsisPath"
+          Add-Content -Path $env:GITHUB_ENV -Value "MAKENSIS_PATH=$nsisPath"
+          & $nsisPath -VERSION
+
+      - name: Build Windows NSIS installer
+        shell: powershell
+        run: |
+          $installerName = "homeocto_app${env:ARTIFACT_SUFFIX}-windows-x64-installer.exe"
+          $nsisPath = $env:MAKENSIS_PATH
+          if (-not $nsisPath) {
+            $cmd = Get-Command makensis -ErrorAction SilentlyContinue
+            if ($cmd) { $nsisPath = $cmd.Path } else { Write-Error "makensis not found"; exit 1 }
+          }
+          Write-Output "Using makensis: $nsisPath"
+          $contentsDir = $env:INSTALLER_STAGE
+          if (-not $contentsDir) { $contentsDir = Join-Path $PWD 'installer_stage' }
+          & $nsisPath /DRELEASE_BASE="${env:RELEASE_BASE}" /DDISPLAY_VERSION="${env:DISPLAY_VERSION}" /DCONTENTS_DIR="$contentsDir" /DLAUNCHER="homeocto_app.exe" /DOUTPUT_DIR="${env:GITHUB_WORKSPACE}" /DOUTPUT_NAME="$installerName" ".github/homeocto_installer.nsi"
+          if (-not (Test-Path $installerName)) {
+            Write-Error "Installer build failed: $installerName"
+            exit 1
+          }
+
+      - name: Upload Windows NSIS installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app${{ env.ARTIFACT_SUFFIX }}-windows-x64-installer.exe
+          path: homeocto_app${{ env.ARTIFACT_SUFFIX }}-windows-x64-installer.exe
+
+  build-linux:
+    runs-on: ubuntu-22.04
+    outputs:
+      release_base: ${{ steps.vars.outputs.release_base }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake ninja-build pkg-config build-essential \
+            libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            lld binutils libstdc++-12-dev libglu1-mesa
+
+      - name: Cache pub
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Fetch core and build Linux release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform linux --arch x86_64 --build-mode release --install-to-build || true
+          flutter build linux --release
+
+      - name: Prepare release metadata
+        id: vars
+        run: |
+          now=$(date -u +%y%m%d)
+          short=$(git rev-parse --short=6 $GITHUB_SHA)
+          prefix="${{ inputs.release_prefix || 'picoclaw_fui' }}"
+          if [[ "${{ inputs.use_fixed_tag }}" == "true" ]]; then
+            release_tag="${prefix}"
+            base_no_prefix="$release_tag"
+            artifact_suffix="-${prefix}-${now}-${short}"
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            base_no_prefix="${GITHUB_REF#refs/tags/}"
+            echo "Tag detected: $base_no_prefix"
+            # Keep tagged release assets on stable filenames without a version suffix.
+            artifact_suffix=""
+            release_tag="${prefix}-${base_no_prefix}"
+          else
+            base_no_prefix="$now-$short"
+            artifact_suffix="-${base_no_prefix}"
+            release_tag="${prefix}-${base_no_prefix}"
+          fi
+          echo "release_base=$base_no_prefix" >> $GITHUB_OUTPUT
+          echo "RELEASE_BASE=$base_no_prefix" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$release_tag" >> $GITHUB_ENV
+          echo "ARTIFACT_SUFFIX=$artifact_suffix" >> $GITHUB_ENV
+          # DISPLAY_VERSION: pubspec version + build-type qualifier for deb/packaging
+          # Debian version requires digit-start; ~ means "earlier than" (pre-release)
+          # Sanitize: replace _ (invalid in deb versions) with .
+          pubspec_ver="$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: //;s/+.*//')"
+          if [[ "$base_no_prefix" =~ ^v?[0-9] ]]; then
+            display_version="$pubspec_ver"
+          else
+            qualifier="${base_no_prefix//_/.}"
+            display_version="${pubspec_ver}~${qualifier}"
+          fi
+          echo "DISPLAY_VERSION=$display_version" >> $GITHUB_ENV
+
+      - name: Package Linux as .deb
+        run: |
+          set -e
+          PKG_NAME=homeocto_app
+          SUFFIX=${ARTIFACT_SUFFIX}
+          DEB_VERSION="${DISPLAY_VERSION}"
+          DEST=${PKG_NAME}${SUFFIX}-linux-x86_64.deb
+          PKGROOT=$PWD/pkg_root
+          rm -rf "$PKGROOT" "$DEST"
+          BUNDLE_DIR=build/linux/x64/release/bundle
+          if [ ! -d "$BUNDLE_DIR" ]; then echo "Bundle not found: $BUNDLE_DIR"; ls -la build/linux || true; exit 1; fi
+          mkdir -p "$PKGROOT/opt/${PKG_NAME}/${RELEASE_BASE}"
+          cp -r "$BUNDLE_DIR"/* "$PKGROOT/opt/${PKG_NAME}/${RELEASE_BASE}/"
+          # Include any fetched core binaries installed to app/bin
+          if [ -d app/bin ]; then
+            mkdir -p "$PKGROOT/opt/${PKG_NAME}/${RELEASE_BASE}/app/bin"
+            cp -r app/bin/* "$PKGROOT/opt/${PKG_NAME}/${RELEASE_BASE}/app/bin/" || true
+          fi
+          mkdir -p "$PKGROOT/usr/bin"
+          printf '%s\n' \
+            '#!/bin/sh' \
+            'set -e' \
+            'BASE=/opt/homeocto_app' \
+            'if [ -d "$BASE" ]; then' \
+            '  DIRNAME=$(ls -1 "$BASE" 2>/dev/null | sort -V | tail -n1)' \
+            '  if [ -n "$DIRNAME" ] && [ -d "$BASE/$DIRNAME" ]; then' \
+            '    DIR="$BASE/$DIRNAME"' \
+            '  else' \
+            '    DIR="$BASE"' \
+            '  fi' \
+            'else' \
+            '  DIR="$BASE"' \
+            'fi' \
+            '# Ensure plugin/shared libs in the bundle are discoverable' \
+            'cd "$DIR" || true' \
+            'export BASE="$DIR"' \
+            'export LD_LIBRARY_PATH="$DIR/lib:$DIR/plugins:$LD_LIBRARY_PATH"' \
+            'exec "$DIR/homeocto_app" "$@"' > "$PKGROOT/usr/bin/${PKG_NAME}"
+          chmod 0755 "$PKGROOT/usr/bin/${PKG_NAME}"
+          mkdir -p "$PKGROOT/DEBIAN"
+          # Install icon and desktop entry
+          mkdir -p "$PKGROOT/usr/share/icons/hicolor/128x128/apps"
+          mkdir -p "$PKGROOT/usr/share/applications"
+          if [ -f assets/app_icon.png ]; then
+            cp assets/app_icon.png "$PKGROOT/usr/share/icons/hicolor/128x128/apps/homeocto_app.png"
+          fi
+          printf '%s\n' \
+            "[Desktop Entry]" \
+            "Name=HomeOcto" \
+            "Exec=/usr/bin/homeocto_app %U" \
+            "Icon=homeocto_app" \
+            "Type=Application" \
+            "Categories=Utility;" \
+            "Terminal=false" > "$PKGROOT/usr/share/applications/homeocto_app.desktop"
+
+          printf '%s\n' \
+            "Package: homeocto-app" \
+            "Version: ${DEB_VERSION}" \
+            "Section: utils" \
+            "Priority: optional" \
+            "Architecture: amd64" \
+            "Maintainer: GitHub Actions <actions@github.com>" \
+            "Description: HomeOcto App" > "$PKGROOT/DEBIAN/control"
+          # Update icon cache if available (ignore errors)
+          if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -f "$PKGROOT/usr/share/icons/hicolor" || true
+          fi
+          dpkg-deb --build "$PKGROOT" "$DEST"
+
+      - name: Upload Linux .deb artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app${{ env.ARTIFACT_SUFFIX }}-linux-x86_64.deb
+          path: homeocto_app${{ env.ARTIFACT_SUFFIX }}-linux-x86_64.deb
+
+  publish:
+    needs: [build-android, build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.set-vars.outputs.release_tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: downloaded_artifacts
+
+      - name: List downloaded files
+        run: ls -la downloaded_artifacts || true
+      - name: Move downloaded artifacts to workspace root
+        run: |
+          shopt -s globstar || true
+          find downloaded_artifacts -type f -exec mv -t . {} + || true
+
+      - name: Set release vars from build outputs
+        id: set-vars
+        run: |
+          echo "RELEASE_BASE=${{ needs.build-android.outputs.release_base }}" >> $GITHUB_ENV
+          echo "ARTIFACT_SUFFIX=${{ needs.build-android.outputs.artifact_suffix }}" >> $GITHUB_ENV
+          if [[ "${{ inputs.use_fixed_tag }}" == "true" ]]; then
+            RELEASE_TAG="${{ needs.build-android.outputs.release_base }}"
+          else
+            RELEASE_TAG="${{ inputs.release_prefix || 'picoclaw_fui' }}-${{ needs.build-android.outputs.release_base }}"
+          fi
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish Release and upload artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
+          allowUpdates: true
+          removeArtifacts: ${{ inputs.use_fixed_tag }}
+          prerelease: true
+          artifacts: |
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-arm_arm64.aab
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-universal.apk
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-international-arm_arm64.aab
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-android-international-universal.apk
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-windows-x64.zip
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-macos-universal.dmg
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-linux-x86_64.deb
+            homeocto_app${{ env.ARTIFACT_SUFFIX }}-windows-x64-installer.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  upload-tos:
+    needs: [publish]
+    if: ${{ !inputs.use_fixed_tag }}
+    uses: ./.github/workflows/upload-tos.yml
+    with:
+      tag: ${{ needs.publish.outputs.release_tag }}
+    secrets: inherit

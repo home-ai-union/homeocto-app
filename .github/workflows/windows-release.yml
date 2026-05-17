@@ -1,0 +1,91 @@
+name: Build Windows Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  PICOCLAW_FLUTTER_BUILD_ARGS: >-
+    --dart-define=PICOCLAW_ANALYTICS_PROVIDER=firebase
+    --dart-define=PICOCLAW_FIREBASE_APP_ID=${{ secrets.PICOCLAW_FIREBASE_APP_ID }}
+    --dart-define=PICOCLAW_FIREBASE_API_KEY=${{ secrets.PICOCLAW_FIREBASE_API_KEY }}
+    --dart-define=PICOCLAW_FIREBASE_PROJECT_ID=${{ secrets.PICOCLAW_FIREBASE_PROJECT_ID }}
+    --dart-define=PICOCLAW_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.PICOCLAW_FIREBASE_MESSAGING_SENDER_ID }}
+    --dart-define=PICOCLAW_UMENG_APP_KEY=${{ secrets.PICOCLAW_UMENG_APP_KEY }}
+    --dart-define=PICOCLAW_UMENG_CHANNEL=${{ secrets.PICOCLAW_UMENG_CHANNEL }}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Flutter pub get
+        run: flutter pub get
+
+      - name: Locate MSBuild and add to PATH
+        shell: powershell
+        run: |
+          Write-Output "Locating MSBuild with vswhere and adding to PATH"
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vswhere)) {
+            Write-Error "vswhere not found at $vswhere"
+            exit 1
+          }
+          $inst = & $vswhere -latest -requires Microsoft.Component.MSBuild -products * -property installationPath
+          if (-not $inst) {
+            Write-Error "Visual Studio with MSBuild not found"
+            exit 1
+          }
+          $msbuildDir = Join-Path $inst 'MSBuild\Current\Bin'
+          Write-Output "Found MSBuild dir: $msbuildDir"
+          Add-Content -Path $env:GITHUB_PATH -Value $msbuildDir
+
+      - name: Verify VS toolchain
+        shell: powershell
+        run: |
+          Write-Output "--- Verify MSVC / MSBuild / NuGet ---"
+          msbuild -version
+          if (Get-Command cl.exe -ErrorAction SilentlyContinue) { cl.exe /? } else { Write-Output 'cl.exe not found' }
+          if (-not (Get-Command nuget -ErrorAction SilentlyContinue)) { choco install nuget.commandline -y } 
+          nuget help
+
+      - name: Build Windows release
+        run: flutter build windows --release $env:PICOCLAW_FLUTTER_BUILD_ARGS
+
+      - name: Prepare release metadata
+        shell: powershell
+        id: vars
+        run: |
+          # Compute short date (YYMMDD) and short commit SHA
+          $date = Get-Date -Format 'yyMMdd'
+          $short = git rev-parse --short=6 HEAD
+          $base_no_prefix = "$date-$short"
+          $release_tag = "picoclaw_fui-$base_no_prefix"
+          Write-Output "Computed release base_no_prefix: $base_no_prefix"
+          # Write outputs for later steps and export base name and full tag
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "release_tag=$release_tag"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_BASE=$base_no_prefix"
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$release_tag"
+
+      - name: Zip Release
+        shell: powershell
+        run: |
+          $dest = "homeocto_app-${env:RELEASE_BASE}-windows-x64.zip"
+          Compress-Archive -Path 'build\\windows\\x64\\runner\\Release\\*' -DestinationPath $dest -Force
+
+      - name: Upload Windows ZIP artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: homeocto_app-${{ env.RELEASE_BASE }}-windows-x64.zip
+          path: homeocto_app-${{ env.RELEASE_BASE }}-windows-x64.zip

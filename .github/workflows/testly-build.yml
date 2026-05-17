@@ -1,0 +1,16 @@
+name: Testly Build (on push to main)
+
+on:
+    push:
+        branches: [main]
+
+permissions:
+    contents: write
+
+jobs:
+    build:
+        uses: ./.github/workflows/release_full.yml
+        with:
+            release_prefix: testly
+            use_fixed_tag: true
+        secrets: inherit
