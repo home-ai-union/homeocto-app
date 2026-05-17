@@ -73,6 +73,10 @@ Future<void> main(List<String> args) async {
     }
   }
 
+  // If tag is 'latest' and it fails, we'll try to fallback to fetching all releases
+  // and picking the most recent non-draft release
+  String effectiveTag = tag;
+
   await Directory(outDir).create(recursive: true);
 
   final hostPlatform = detectPlatform();
@@ -179,7 +183,7 @@ Future<void> main(List<String> args) async {
     try {
       final data = await fetchReleaseJson(repo, androidTag, token);
       assets = (data['assets'] as List).cast<Map<String, dynamic>>();
-      
+
       // Print all available assets for debugging
       stdout.writeln('\nAvailable assets in release:');
       for (final asset in assets) {
@@ -189,7 +193,53 @@ Future<void> main(List<String> args) async {
       stdout.writeln('');
     } catch (e) {
       stderr.writeln('Failed to fetch release JSON: $e');
-      exit(2);
+
+      // If we're using 'latest' tag and it failed, try to get all releases and pick the latest
+      if (androidTag == 'latest') {
+        stderr.writeln(
+          'Falling back to fetching all releases to find the latest...',
+        );
+        try {
+          final allReleases = await fetchAllReleases(repo, token);
+          if (allReleases.isNotEmpty) {
+            // Find the first non-draft release
+            Map<String, dynamic>? latestRelease;
+            for (final release in allReleases) {
+              if (!(release['draft'] as bool)) {
+                latestRelease = release;
+                break;
+              }
+            }
+
+            if (latestRelease != null) {
+              stdout.writeln(
+                'Found latest non-draft release: ${latestRelease['tag_name']}',
+              );
+              assets = (latestRelease['assets'] as List)
+                  .cast<Map<String, dynamic>>();
+
+              // Print all available assets for debugging
+              stdout.writeln('\nAvailable assets in fallback release:');
+              for (final asset in assets) {
+                stdout.writeln('  - ${asset['name']} (${asset['size']} bytes)');
+                stdout.writeln('    URL: ${asset['browser_download_url']}');
+              }
+              stdout.writeln('');
+            } else {
+              stderr.writeln('No non-draft releases found');
+              exit(2);
+            }
+          } else {
+            stderr.writeln('No releases found in repository');
+            exit(2);
+          }
+        } catch (fallbackError) {
+          stderr.writeln('Fallback also failed: $fallbackError');
+          exit(2);
+        }
+      } else {
+        exit(2);
+      }
     }
 
     // Select best Android asset: prefer arch-specific, fall back to universal
@@ -311,7 +361,45 @@ Future<void> main(List<String> args) async {
       assets = (data['assets'] as List).cast<Map<String, dynamic>>();
     } catch (e) {
       stderr.writeln('Failed to fetch release JSON: $e');
-      exit(2);
+
+      // If we're using 'latest' tag and it failed, try to get all releases and pick the latest
+      if (tag == 'latest') {
+        stderr.writeln(
+          'Falling back to fetching all releases to find the latest...',
+        );
+        try {
+          final allReleases = await fetchAllReleases(repo, token);
+          if (allReleases.isNotEmpty) {
+            // Find the first non-draft release
+            Map<String, dynamic>? latestRelease;
+            for (final release in allReleases) {
+              if (!(release['draft'] as bool)) {
+                latestRelease = release;
+                break;
+              }
+            }
+
+            if (latestRelease != null) {
+              stdout.writeln(
+                'Found latest non-draft release: ${latestRelease['tag_name']}',
+              );
+              assets = (latestRelease['assets'] as List)
+                  .cast<Map<String, dynamic>>();
+            } else {
+              stderr.writeln('No non-draft releases found');
+              exit(2);
+            }
+          } else {
+            stderr.writeln('No releases found in repository');
+            exit(2);
+          }
+        } catch (fallbackError) {
+          stderr.writeln('Fallback also failed: $fallbackError');
+          exit(2);
+        }
+      } else {
+        exit(2);
+      }
     }
 
     final prefExts = selectedPlatform.toLowerCase() == 'windows'
@@ -494,18 +582,44 @@ Future<Map<String, dynamic>> fetchReleaseJson(
   );
   final headers = <String, String>{'Accept': 'application/vnd.github.v3+json'};
   if (token.isNotEmpty) headers['Authorization'] = 'token $token';
-  
+
   stdout.writeln('Fetching release from: $api');
   stdout.writeln('Headers: $headers');
-  
+
   final resp = await http.get(api, headers: headers);
   stdout.writeln('Response status: ${resp.statusCode}');
   stdout.writeln('Response body: ${resp.body}');
-  
+
   if (resp.statusCode != 200) {
     throw HttpException('Failed to fetch release JSON: ${resp.statusCode}');
   }
   return json.decode(resp.body) as Map<String, dynamic>;
+}
+
+/// Fetch all releases from the repository and return them sorted by creation date (newest first)
+Future<List<Map<String, dynamic>>> fetchAllReleases(
+  String repo,
+  String token,
+) async {
+  final api = Uri.parse('https://api.github.com/repos/$repo/releases');
+  final headers = <String, String>{'Accept': 'application/vnd.github.v3+json'};
+  if (token.isNotEmpty) headers['Authorization'] = 'token $token';
+
+  stdout.writeln('Fetching all releases from: $api');
+
+  final resp = await http.get(api, headers: headers);
+  stdout.writeln('Response status: ${resp.statusCode}');
+
+  if (resp.statusCode != 200) {
+    throw HttpException('Failed to fetch releases list: ${resp.statusCode}');
+  }
+
+  final releases = (json.decode(resp.body) as List)
+      .cast<Map<String, dynamic>>();
+  stdout.writeln('Found ${releases.length} total releases');
+
+  // Releases are already sorted by created_at descending by GitHub API
+  return releases;
 }
 
 Map<String, String>? selectBestAsset(
