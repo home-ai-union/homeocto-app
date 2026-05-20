@@ -207,6 +207,12 @@ jobs:
         run: |
           dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform android --arch arm64 --build-mode release --install-to-build  
 
+      - name: Fetch/install llama-server for Android
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          dart run tools/fetch_llama_server.dart --tag latest
+
       - name: Build Android App Bundle (AAB)
         run: flutter build appbundle --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
 
