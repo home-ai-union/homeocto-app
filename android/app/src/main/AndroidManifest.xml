@@ -72,6 +72,12 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <!-- llama JNI 推理服务（OpenAI 兼容 API） -->
+        <service
+            android:name=".service.JniInferenceService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
         <!-- Flutter Background Service 插件 -->
         <service
             android:name="id.flutter.flutter_background_service.BackgroundService"

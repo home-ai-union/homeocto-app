@@ -171,6 +171,11 @@ x86/
 **/linux/flutter/generated_plugin_registrant.h
 **/linux/flutter/generated_plugins.cmake
 
+# llama.cpp build artifacts
+llama.cpp/build/
+*.gguf
+*.bin
+
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
 !**/ios/**/default.mode2v3
