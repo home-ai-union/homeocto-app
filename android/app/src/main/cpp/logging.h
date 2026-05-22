@@ -48,7 +48,7 @@ static inline int android_log_prio_from_ggml(enum ggml_log_level level) {
     }
 }
 
-static inline void minicpm_android_log_callback(enum ggml_log_level level,
+static inline void homeocto_android_log_callback(enum ggml_log_level level,
                                                 const char* text,
                                                 void* /*user*/) {
     const int prio = android_log_prio_from_ggml(level);

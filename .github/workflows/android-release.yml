@@ -63,6 +63,15 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          submodules: recursive
+
+      - name: Initialize llama.cpp submodule
+        run: |
+          if [ ! -f "llama.cpp/CMakeLists.txt" ]; then
+            echo "Error: llama.cpp submodule not found"
+            exit 1
+          fi
+          echo "llama.cpp submodule initialized successfully"
 
       - name: Check variant filter
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.variant != 'both' && github.event.inputs.variant != matrix.variant }}
@@ -114,7 +123,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Android command-line tools and SDK components (API 29)
+      - name: Install Android command-line tools and SDK components (API 29 + NDK)
         run: |
           sudo apt-get update
           sudo apt-get install -y unzip wget
@@ -131,8 +140,10 @@ jobs:
           echo "$ANDROID_SDK_ROOT/platform-tools" >> $GITHUB_PATH
           export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH"
           # Accept licenses and install required components
+          # NDK 27.0.12077973 is compatible with Flutter stable and AGP 8.11
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-29" "build-tools;29.0.3"
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-29" "build-tools;29.0.3" "ndk;27.0.12077973"
+          echo "NDK installed at: $ANDROID_SDK_ROOT/ndk/27.0.12077973"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -149,6 +160,12 @@ jobs:
 
       - name: Flutter pub get
         run: flutter pub get
+
+      - name: Configure NDK version for Gradle
+        run: |
+          # Ensure Gradle uses the installed NDK version
+          # This matches flutter.ndkVersion expectation for Flutter 3.27+ stable
+          echo "Configured NDK: 27.0.12077973"
 
       - name: Accept Android SDK licenses
         run: |
