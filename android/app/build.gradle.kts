@@ -142,7 +142,40 @@ android {
             // 不要 strip libpicoclaw*.so（它们不是标准动态库）
             keepDebugSymbols += "**/libhomeocto.so"
             keepDebugSymbols += "**/libhomeocto-web.so"
+            // JNI llama.cpp library
+            keepDebugSymbols += "**/libhomeocto_llama.so"
+            // GGML CPU backends
+            keepDebugSymbols += "**/libggml-cpu*.so"
         }
+    }
+
+    // CMake build configuration for llama.cpp JNI
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+        }
+    }
+
+    defaultConfig {
+        // ... existing code ...
+        externalNativeBuild {
+            cmake {
+                arguments += "-DCMAKE_BUILD_TYPE=Release"
+                arguments += "-DBUILD_SHARED_LIBS=ON"
+                arguments += "-DLLAMA_BUILD_COMMON=ON"
+                arguments += "-DLLAMA_OPENSSL=OFF"
+                arguments += "-DGGML_NATIVE=OFF"
+                arguments += "-DGGML_LLAMAFILE=ON"
+            }
+        }
+    }
+
+    ndk {
+        abiFilters += listOf("arm64-v8a")
+    }
+
+    androidResources {
+        noCompress += listOf("gguf", "bin")
     }
 }
 
@@ -156,6 +189,18 @@ dependencies {
     implementation("com.umeng.umsdk:common:9.9.1")
     implementation("com.umeng.umsdk:asms:1.8.7.2")
     implementation("javax.xml.stream:stax-api:1.0-2")
+
+    // Ktor for embedded HTTP server (OpenAI-compatible API)
+    implementation("io.ktor:ktor-server-core:2.3.12")
+    implementation("io.ktor:ktor-server-netty:2.3.12")
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.12")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.12")
+
+    // Kotlin serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+
+    // Kotlin coroutines
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }
 
 // Generate Firebase resources from dart-define
