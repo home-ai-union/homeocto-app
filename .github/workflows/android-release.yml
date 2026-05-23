@@ -142,7 +142,7 @@ jobs:
           # Accept licenses and install required components
           # NDK 27.0.12077973 is compatible with Flutter stable and AGP 8.11
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-29" "build-tools;29.0.3" "ndk;27.0.12077973"
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973"
           echo "NDK installed at: $ANDROID_SDK_ROOT/ndk/27.0.12077973"
 
       - name: Setup Flutter
@@ -260,13 +260,16 @@ jobs:
       - name: Build libhomeocto_llama.so
         run: |
           echo "Building libhomeocto_llama.so with CMake..."
-          cd android/app
+          
+          # Define paths with absolute directories for clarity
+          SRC_DIR="$GITHUB_WORKSPACE/android/app/src/main/cpp"
+          BUILD_DIR="$GITHUB_WORKSPACE/android/app/.cxx/Release/arm64-v8a"
+          JNILIBS_DIR="$GITHUB_WORKSPACE/android/app/src/main/jniLibs/arm64-v8a"
           
           # Find CMake in NDK or use system CMake
           if [ -d "$ANDROID_NDK_HOME/build/cmake" ]; then
             CMAKE_BIN=$(find $ANDROID_NDK_HOME/build/cmake -name "cmake" -type f | head -1)
             if [ -z "$CMAKE_BIN" ]; then
-              # Try to find cmake executable
               CMAKE_BIN=$(find $ANDROID_NDK_HOME/build/cmake -name "cmake" | head -1)
             fi
           fi
@@ -279,12 +282,10 @@ jobs:
               exit 1
             fi
           fi
-          
           echo "Using CMake: $CMAKE_BIN"
           
           # Create build directory
-          mkdir -p .cxx/Release/arm64-v8a
-          cd .cxx/Release/arm64-v8a
+          mkdir -p "$BUILD_DIR"
           
           # Configure with CMake
           $CMAKE_BIN \
@@ -300,27 +301,27 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
             -DCMAKE_MAKE_PROGRAM=$(which ninja || echo "make") \
             -G "Unix Makefiles" \
-            ../../src/main/cpp
+            -S "$SRC_DIR" \
+            -B "$BUILD_DIR"
           
           # Build
-          cmake --build . --config Release -- -j$(nproc)
+          cmake --build "$BUILD_DIR" --config Release -- -j$(nproc)
           
           # Verify output
-          if [ -f "libhomeocto_llama.so" ]; then
+          if [ -f "$BUILD_DIR/libhomeocto_llama.so" ]; then
             echo "libhomeocto_llama.so built successfully"
-            ls -lh libhomeocto_llama.so
+            ls -lh "$BUILD_DIR/libhomeocto_llama.so"
             
             # Copy to jniLibs directory for packaging
-            mkdir -p ../../../../src/main/jniLibs/arm64-v8a
-            cp libhomeocto_llama.so ../../../../src/main/jniLibs/arm64-v8a/
+            mkdir -p "$JNILIBS_DIR"
+            cp "$BUILD_DIR/libhomeocto_llama.so" "$JNILIBS_DIR/"
             echo "Copied to jniLibs/arm64-v8a/"
           else
             echo "ERROR: libhomeocto_llama.so not found after build"
-            find . -name "*.so" -type f
+            find "$BUILD_DIR" -name "*.so" -type f
             exit 1
           fi
           
-          cd ../../..
           echo "libhomeocto_llama.so build completed"  
 
       - name: Build Android App Bundle (AAB)
@@ -334,7 +335,7 @@ jobs:
         run: |
           echo "Verifying APK signature..."
           BUILD_TOOLS=$(ls -d $ANDROID_SDK_ROOT/build-tools/*/ | sort -V | tail -n 1)
-          $BUILD_TOOLS/apksigner verify -v build/app/outputs/flutter-apk/app-release.apk || true
+          $BUILD_TOOLS/apksigner verify -v build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk || true
           echo "Signature verification completed"
 
       - name: Prepare release metadata
@@ -354,7 +355,6 @@ jobs:
         run: |
           set -e
           PKG_NAME=homeocto_app
-          VARIANT=${VARIANT}
           FLAVOR=${{ matrix.flavor }}
           TAG=${RELEASE_BASE}
           if [ "$VARIANT" = "domestic" ]; then
