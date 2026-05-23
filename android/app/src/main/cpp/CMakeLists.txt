@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.22.1)
 project("homeocto_llama")
 
-# llama.cpp source location (4 levels up from this file)
-set(LLAMA_SRC ${CMAKE_CURRENT_LIST_DIR}/../../../../llama.cpp)
+# llama.cpp source location (5 levels up from this file)
+set(LLAMA_SRC ${CMAKE_CURRENT_LIST_DIR}/../../../../../llama.cpp)
 
 if(NOT EXISTS ${LLAMA_SRC}/CMakeLists.txt)
     message(FATAL_ERROR "llama.cpp not found at ${LLAMA_SRC}. Run `git submodule update --init --recursive`")
