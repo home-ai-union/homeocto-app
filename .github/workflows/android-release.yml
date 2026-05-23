@@ -165,7 +165,9 @@ jobs:
         run: |
           # Ensure Gradle uses the installed NDK version
           # This matches flutter.ndkVersion expectation for Flutter 3.27+ stable
-          echo "Configured NDK: 27.0.12077973"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+          echo "Configured NDK: 27.0.12077973 at $ANDROID_SDK_ROOT/ndk/27.0.12077973"
 
       - name: Accept Android SDK licenses
         run: |
@@ -223,6 +225,80 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           dart run tools/fetch_core_local.dart --repo home-ai-union/homeocto --tag latest --out-dir app/bin --platform android --arch arm64 --build-mode release --install-to-build  
+
+      - name: Verify C++ build environment
+        run: |
+          echo "Checking C++ build prerequisites..."
+          echo "ANDROID_NDK_HOME: $ANDROID_NDK_HOME"
+          echo "NDK_HOME: $NDK_HOME"
+          if [ -d "$ANDROID_NDK_HOME" ]; then
+            echo "NDK found at: $ANDROID_NDK_HOME"
+            ls -la $ANDROID_NDK_HOME/ | head -20
+          else
+            echo "ERROR: NDK not found at $ANDROID_NDK_HOME"
+            exit 1
+          fi
+          
+          # Check CMakeLists.txt exists
+          if [ -f "android/app/src/main/cpp/CMakeLists.txt" ]; then
+            echo "CMakeLists.txt found"
+          else
+            echo "ERROR: CMakeLists.txt not found"
+            exit 1
+          fi
+          
+          # Check llama_jni.cpp exists
+          if [ -f "android/app/src/main/cpp/llama_jni.cpp" ]; then
+            echo "llama_jni.cpp found"
+          else
+            echo "ERROR: llama_jni.cpp not found"
+            exit 1
+          fi
+          
+          echo "C++ build environment verified successfully"
+
+      - name: Build libhomeocto_llama.so
+        run: |
+          echo "Building libhomeocto_llama.so with CMake..."
+          cd android/app
+          
+          # Create build directory
+          mkdir -p .cxx/Release/arm64-v8a
+          cd .cxx/Release/arm64-v8a
+          
+          # Configure with CMake
+          $ANDROID_NDK_HOME/build/cmake/cmake.sh \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_SHARED_LIBS=ON \
+            -DLLAMA_BUILD_COMMON=ON \
+            -DLLAMA_OPENSSL=OFF \
+            -DGGML_NATIVE=OFF \
+            -DGGML_LLAMAFILE=ON \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-21 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            ../../src/main/cpp
+          
+          # Build
+          cmake --build . --config Release -- -j$(nproc)
+          
+          # Verify output
+          if [ -f "libhomeocto_llama.so" ]; then
+            echo "libhomeocto_llama.so built successfully"
+            ls -lh libhomeocto_llama.so
+            
+            # Copy to jniLibs directory for packaging
+            mkdir -p ../../../../src/main/jniLibs/arm64-v8a
+            cp libhomeocto_llama.so ../../../../src/main/jniLibs/arm64-v8a/
+            echo "Copied to jniLibs/arm64-v8a/"
+          else
+            echo "ERROR: libhomeocto_llama.so not found after build"
+            find . -name "*.so" -type f
+            exit 1
+          fi
+          
+          cd ../../..
+          echo "libhomeocto_llama.so build completed"  
 
       - name: Build Android App Bundle (AAB)
         run: flutter build appbundle --release --target-platform android-arm,android-arm64 --flavor ${{ matrix.flavor }} $PICOCLAW_FLUTTER_BUILD_ARGS
