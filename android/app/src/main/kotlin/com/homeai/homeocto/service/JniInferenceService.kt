@@ -50,12 +50,17 @@ class JniInferenceService : Service() {
         private const val CHANNEL_NAME = "AI Inference Service"
 
         // Default HTTP server port
-        const val DEFAULT_PORT = 8080
+        const val DEFAULT_PORT = 18792
     }
 
     private var server: Any? = null
     private val engine = JniLlamaEngine.instance
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    
+    // 延迟加载模型：仅在首次调用时加载
+    @Volatile
+    private var isModelLoaded = false
+    private val modelLoadLock = Any()
 
     override fun onCreate() {
         super.onCreate()
@@ -64,27 +69,13 @@ class JniInferenceService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val port = intent?.getIntExtra("port", DEFAULT_PORT) ?: DEFAULT_PORT
-        val modelPath = intent?.getStringExtra("model_path")
-        val mmprojPath = intent?.getStringExtra("mmproj_path")
 
         // Start foreground service
-        startForeground(NOTIFICATION_ID, createNotification())
+        startForeground(NOTIFICATION_ID, createNotification("AI Inference Service (standby)"))
 
-        // Initialize engine
+        // 仅初始化引擎，不加载模型（延迟到首次调用时）
         engine.initialize(this)
-
-        // Load model if specified
-        if (modelPath != null) {
-            val modelInfo = findModelForPath(modelPath)
-            serviceScope.launch {
-                val success = engine.loadModel(
-                    modelPath = modelPath,
-                    mmprojPath = mmprojPath,
-                    modelVersion = modelInfo?.version ?: 0
-                )
-                Log.i(TAG, "Model loading ${if (success) "succeeded" else "failed"}: $modelPath")
-            }
-        }
+        Log.i(TAG, "Engine initialized, model will be loaded on first request")
 
         // Start HTTP server
         startServer(port)
@@ -143,7 +134,7 @@ class JniInferenceService : Service() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private fun createNotification(status: String = "AI Inference Service (standby)"): Notification {
         val pendingIntent = PendingIntent.getActivity(
             this, 0,
             Intent(this, getMainActivityClass()),
@@ -152,11 +143,21 @@ class JniInferenceService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("AI Inference Service")
-            .setContentText("OpenAI-compatible API server running")
+            .setContentText(status)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()
+    }
+
+    private fun updateNotification(status: String) {
+        try {
+            val notification = createNotification(status)
+            val manager = getSystemService(android.app.NotificationManager::class.java)
+            manager.notify(NOTIFICATION_ID, notification)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to update notification", e)
+        }
     }
 
     private fun getMainActivityClass(): Class<*> {
@@ -173,13 +174,16 @@ class JniInferenceService : Service() {
     private suspend fun handleHealth(call: ApplicationCall) {
         val response = HealthResponse(
             status = "ok",
-            modelLoaded = true,
+            modelLoaded = isModelLoaded,
             modelVersion = engine.getModelVersion()
         )
         call.respond(response)
     }
 
     private suspend fun handleChatCompletions(call: ApplicationCall) {
+        // 延迟加载模型：首次调用时加载默认模型
+        ensureModelLoaded()
+        
         val request = call.receive<ChatCompletionRequest>()
 
         val completionId = "chatcmpl-${UUID.randomUUID()}"
@@ -260,6 +264,61 @@ class JniInferenceService : Service() {
             }
         }
         return sb.toString()
+    }
+
+    /**
+     * 确保模型已加载（延迟加载，仅在首次调用时执行）
+     */
+    private suspend fun ensureModelLoaded() {
+        if (isModelLoaded) {
+            return
+        }
+
+        synchronized(modelLoadLock) {
+            // 双重检查，避免并发加载
+            if (isModelLoaded) {
+                return
+            }
+
+            Log.i(TAG, "Loading default model on first request...")
+            updateNotification("AI Inference Service (loading model...)")
+
+            try {
+                // 加载默认模型
+                val defaultModel = ModelInfo.DEFAULT_MODEL
+                val downloadDir = File(getExternalFilesDir(null), "models")
+                val ggufFile = File(downloadDir, defaultModel.ggufFileName)
+                val mmprojFile = File(downloadDir, defaultModel.mmprojFileName)
+
+                // 检查模型文件是否存在
+                if (!ggufFile.exists()) {
+                    throw IllegalStateException(
+                        "Model file not found: ${ggufFile.absolutePath}. " +
+                        "Please download the model first using ModelDownloadService."
+                    )
+                }
+
+                val mmprojPath = if (mmprojFile.exists()) mmprojFile.absolutePath else null
+                
+                val success = engine.loadModel(
+                    modelPath = ggufFile.absolutePath,
+                    mmprojPath = mmprojPath,
+                    modelVersion = defaultModel.version
+                )
+
+                if (success) {
+                    isModelLoaded = true
+                    Log.i(TAG, "Model loaded successfully: ${defaultModel.displayName}")
+                    updateNotification("AI Inference Service (ready)")
+                } else {
+                    throw IllegalStateException("Failed to load model: ${defaultModel.displayName}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to load model on first request", e)
+                updateNotification("AI Inference Service (model load failed)")
+                throw e
+            }
+        }
     }
 
     // ===== Data Classes =====
