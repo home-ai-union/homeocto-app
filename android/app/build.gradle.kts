@@ -94,6 +94,21 @@ android {
         manifestPlaceholders["PICOCLAW_UMENG_APP_KEY"] = umengAppKey
         manifestPlaceholders["PICOCLAW_UMENG_CHANNEL"] = umengChannel
         manifestPlaceholders["PICOCLAW_UMENG_LINK_SCHEME"] = umengLinkScheme
+        
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+        
+        externalNativeBuild {
+            cmake {
+                arguments += "-DCMAKE_BUILD_TYPE=Release"
+                arguments += "-DBUILD_SHARED_LIBS=ON"
+                arguments += "-DLLAMA_BUILD_COMMON=ON"
+                arguments += "-DLLAMA_OPENSSL=OFF"
+                arguments += "-DGGML_NATIVE=OFF"
+                arguments += "-DGGML_LLAMAFILE=ON"
+            }
+        }
     }
 
     signingConfigs {
@@ -147,31 +162,6 @@ android {
             // GGML CPU backends
             keepDebugSymbols += "**/libggml-cpu*.so"
         }
-    }
-
-    // CMake build configuration for llama.cpp JNI
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-        }
-    }
-
-    defaultConfig {
-        // ... existing code ...
-        externalNativeBuild {
-            cmake {
-                arguments += "-DCMAKE_BUILD_TYPE=Release"
-                arguments += "-DBUILD_SHARED_LIBS=ON"
-                arguments += "-DLLAMA_BUILD_COMMON=ON"
-                arguments += "-DLLAMA_OPENSSL=OFF"
-                arguments += "-DGGML_NATIVE=OFF"
-                arguments += "-DGGML_LLAMAFILE=ON"
-            }
-        }
-    }
-
-    ndk {
-        abiFilters += listOf("arm64-v8a")
     }
 
     androidResources {
