@@ -22,6 +22,16 @@ endif()
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 
+# Android NDK compatibility: ensure POSIX constants (e.g. POSIX_MADV_*) are available
+if(ANDROID)
+    add_compile_definitions(_POSIX_C_SOURCE=200809L)
+endif()
+
+# Must set before add_subdirectory to fix variable scoping:
+# llama.cpp sets LLAMA_INSTALL_VERSION in its own scope,
+# but tools/mtmd is a sibling add_subdirectory and cannot see it.
+set(LLAMA_INSTALL_VERSION "0.0.0")
+
 # Add llama.cpp subdirectories
 add_subdirectory(${LLAMA_SRC} ${CMAKE_BINARY_DIR}/build-llama)
 add_subdirectory(${LLAMA_SRC}/tools/mtmd ${CMAKE_BINARY_DIR}/build-mtmd)
