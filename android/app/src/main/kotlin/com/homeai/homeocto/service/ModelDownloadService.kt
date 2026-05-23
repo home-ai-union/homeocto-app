@@ -87,6 +87,16 @@ class ModelDownloadService : Service() {
      * First source to respond wins, other is cancelled.
      */
     suspend fun downloadModelWithRacing(modelInfo: ModelInfo): Result<String> = withContext(Dispatchers.IO) {
+        downloadModelWithRacing(modelInfo, null)
+    }
+
+    /**
+     * Download a model with racing sources and progress callback.
+     */
+    suspend fun downloadModelWithRacing(
+        modelInfo: ModelInfo,
+        progressCallback: ((Float) -> Unit)?
+    ): Result<String> = withContext(Dispatchers.IO) {
         val downloadDir = getDownloadDirectory()
         val ggufFile = File(downloadDir, modelInfo.ggufFileName)
         val mmprojFile = File(downloadDir, modelInfo.mmprojFileName)
@@ -100,7 +110,8 @@ class ModelDownloadService : Service() {
                 hfRepo = modelInfo.hfRepo,
                 msRepo = modelInfo.msRepo,
                 expectedMd5 = modelInfo.ggufMd5,
-                outputFile = ggufFile
+                outputFile = ggufFile,
+                progressCallback = progressCallback
             )
 
             if (ggufResult.isFailure) {
@@ -115,7 +126,8 @@ class ModelDownloadService : Service() {
                 hfRepo = modelInfo.hfRepo,
                 msRepo = modelInfo.msRepo,
                 expectedMd5 = modelInfo.mmprojMd5,
-                outputFile = mmprojFile
+                outputFile = mmprojFile,
+                progressCallback = progressCallback
             )
 
             if (mmprojResult.isFailure) {
@@ -139,7 +151,8 @@ class ModelDownloadService : Service() {
         hfRepo: String?,
         msRepo: String?,
         expectedMd5: String?,
-        outputFile: File
+        outputFile: File,
+        progressCallback: ((Float) -> Unit)? = null
     ): Result<String> = suspendCoroutine { continuation ->
         if (outputFile.exists() && verifyMd5(outputFile, expectedMd5)) {
             Log.i(TAG, "File already exists and verified: $fileName")
@@ -175,6 +188,9 @@ class ModelDownloadService : Service() {
                     try {
                         Log.i(TAG, "Downloading from: $url")
                         downloadFile(url, outputFile) { progress ->
+                            // 调用外部进度回调（如果提供）
+                            progressCallback?.invoke(progress)
+                            
                             updateProgress(
                                 modelInfo.id, fileName, progress,
                                 notificationId = notificationId

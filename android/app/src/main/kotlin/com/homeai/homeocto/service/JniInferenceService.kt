@@ -56,10 +56,15 @@ class JniInferenceService : Service() {
     private var server: Any? = null
     private val engine = JniLlamaEngine.instance
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val modelDownloadService = ModelDownloadService()
     
     // 延迟加载模型：仅在首次调用时加载
     @Volatile
     private var isModelLoaded = false
+    @Volatile
+    private var isModelDownloading = false
+    @Volatile
+    private var downloadProgress = 0.0f
     private val modelLoadLock = Any()
 
     override fun onCreate() {
@@ -173,9 +178,10 @@ class JniInferenceService : Service() {
 
     private suspend fun handleHealth(call: ApplicationCall) {
         val response = HealthResponse(
-            status = "ok",
+            status = if (isModelDownloading) "downloading" else "ok",
             modelLoaded = isModelLoaded,
-            modelVersion = engine.getModelVersion()
+            modelVersion = engine.getModelVersion(),
+            downloadProgress = if (isModelDownloading) downloadProgress else null
         )
         call.respond(response)
     }
@@ -290,12 +296,10 @@ class JniInferenceService : Service() {
                 val ggufFile = File(downloadDir, defaultModel.ggufFileName)
                 val mmprojFile = File(downloadDir, defaultModel.mmprojFileName)
 
-                // 检查模型文件是否存在
+                // 检查模型文件是否存在，不存在则自动下载
                 if (!ggufFile.exists()) {
-                    throw IllegalStateException(
-                        "Model file not found: ${ggufFile.absolutePath}. " +
-                        "Please download the model first using ModelDownloadService."
-                    )
+                    Log.i(TAG, "Model file not found, starting automatic download...")
+                    downloadModel(defaultModel)
                 }
 
                 val mmprojPath = if (mmprojFile.exists()) mmprojFile.absolutePath else null
@@ -321,13 +325,59 @@ class JniInferenceService : Service() {
         }
     }
 
+    /**
+     * 下载模型文件（带进度跟踪）
+     */
+    private suspend fun downloadModel(modelInfo: ModelInfo) {
+        if (isModelDownloading) {
+            // 如果已经在下载，等待下载完成
+            Log.i(TAG, "Model download already in progress, waiting...")
+            while (isModelDownloading) {
+                delay(1000)
+                updateNotification("AI Inference Service (downloading: ${(downloadProgress * 100).toInt()}%)")
+            }
+            return
+        }
+
+        isModelDownloading = true
+        downloadProgress = 0.0f
+
+        try {
+            Log.i(TAG, "Starting model download: ${modelInfo.displayName}")
+            updateNotification("AI Inference Service (downloading: 0%)")
+
+            // 启动下载并跟踪进度
+            val result = modelDownloadService.downloadModelWithRacing(
+                modelInfo = modelInfo,
+                progressCallback = { progress ->
+                    downloadProgress = progress
+                    val percent = (progress * 100).toInt()
+                    Log.d(TAG, "Download progress: $percent%")
+                    updateNotification("AI Inference Service (downloading: $percent%)")
+                }
+            )
+            
+            if (result.isSuccess) {
+                Log.i(TAG, "Model download completed: ${modelInfo.displayName}")
+                downloadProgress = 1.0f
+                updateNotification("AI Inference Service (download complete, loading...)")
+            } else {
+                val error = result.exceptionOrNull()?.message ?: "Unknown error"
+                throw IllegalStateException("Model download failed: $error")
+            }
+        } finally {
+            isModelDownloading = false
+        }
+    }
+
     // ===== Data Classes =====
 
     @Serializable
     data class HealthResponse(
         val status: String,
         val modelLoaded: Boolean,
-        val modelVersion: Int
+        val modelVersion: Int,
+        val downloadProgress: Float? = null
     )
 
     @Serializable
