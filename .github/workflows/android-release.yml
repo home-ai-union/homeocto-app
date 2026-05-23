@@ -142,7 +142,7 @@ jobs:
           # Accept licenses and install required components
           # NDK 27.0.12077973 is compatible with Flutter stable and AGP 8.11
           yes | sdkmanager --sdk_root=$ANDROID_SDK_ROOT --licenses || true
-          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-29" "build-tools;29.0.3" "ndk;27.0.12077973"
+          sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;27.0.12077973"
           echo "NDK installed at: $ANDROID_SDK_ROOT/ndk/27.0.12077973"
 
       - name: Setup Flutter
@@ -335,7 +335,7 @@ jobs:
         run: |
           echo "Verifying APK signature..."
           BUILD_TOOLS=$(ls -d $ANDROID_SDK_ROOT/build-tools/*/ | sort -V | tail -n 1)
-          $BUILD_TOOLS/apksigner verify -v build/app/outputs/flutter-apk/app-release.apk || true
+          $BUILD_TOOLS/apksigner verify -v build/app/outputs/flutter-apk/app-${{ matrix.flavor }}-release.apk || true
           echo "Signature verification completed"
 
       - name: Prepare release metadata
@@ -355,7 +355,6 @@ jobs:
         run: |
           set -e
           PKG_NAME=homeocto_app
-          VARIANT=${VARIANT}
           FLAVOR=${{ matrix.flavor }}
           TAG=${RELEASE_BASE}
           if [ "$VARIANT" = "domestic" ]; then
