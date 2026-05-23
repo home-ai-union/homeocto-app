@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import java.io.File
 import java.util.UUID
@@ -52,7 +53,7 @@ class JniInferenceService : Service() {
         const val DEFAULT_PORT = 8080
     }
 
-    private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
+    private var server: Any? = null
     private val engine = JniLlamaEngine.instance
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -119,7 +120,10 @@ class JniInferenceService : Service() {
     }
 
     private fun stopServer() {
-        server?.stop(1000, 2000, java.util.concurrent.TimeUnit.MILLISECONDS)
+        (server as? io.ktor.server.engine.ApplicationEngine)?.stop(
+            gracePeriodMillis = 1000,
+            timeoutMillis = 2000
+        )
         server = null
         Log.i(TAG, "HTTP server stopped")
     }
@@ -202,10 +206,11 @@ class JniInferenceService : Service() {
                             )
                         )
                     )
-                    write("data: ${Json.encodeToString(ChatCompletionChunk.serializer(), chunk)}\n\n")
+                    val jsonString = Json.encodeToString(chunk)
+                    write("data: $jsonString\n\n".toByteArray())
                     flush()
                 }
-                write("data: [DONE]\n\n")
+                write("data: [DONE]\n\n".toByteArray())
                 flush()
             }
         } else {

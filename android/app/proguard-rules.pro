@@ -41,3 +41,22 @@
 -keep class javax.xml.stream.** { *; }
 -keep class org.apache.tika.** { *; }
 -dontwarn org.apache.tika.**
+
+# Ktor and Netty ProGuard Rules
+# Netty optional dependencies (TC Native, BouncyCastle, Conscrypt, etc.)
+-dontwarn io.netty.internal.tcnative.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.conscrypt.**
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.eclipse.jetty.npn.**
+-dontwarn reactor.blockhound.**
+-dontwarn java.lang.management.**
+
+# Keep Ktor serialization classes
+-keep class kotlinx.serialization.** { *; }
+-keepclassmembers class kotlinx.serialization.** { *; }
+
+# Keep Ktor server classes
+-keep class io.ktor.** { *; }
+-keepclassmembers class io.ktor.** { *; }
