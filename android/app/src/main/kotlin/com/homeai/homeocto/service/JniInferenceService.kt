@@ -1,7 +1,11 @@
 package com.homeai.homeocto.service
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -36,7 +40,7 @@ import kotlin.coroutines.suspendCoroutine
  * - GET  /health                    - Health check
  * - POST /v1/chat/completions       - Chat completions (text + images)
  */
-class JniInferenceService : androidx.core.app.Service() {
+class JniInferenceService : Service() {
 
     companion object {
         private const val TAG = "JniInferenceService"
@@ -115,7 +119,7 @@ class JniInferenceService : androidx.core.app.Service() {
     }
 
     private fun stopServer() {
-        server?.stop(1000, 2000)
+        server?.stop(1000, 2000, java.util.concurrent.TimeUnit.MILLISECONDS)
         server = null
         Log.i(TAG, "HTTP server stopped")
     }
@@ -130,7 +134,7 @@ class JniInferenceService : androidx.core.app.Service() {
                 description = "AI inference service running OpenAI-compatible API"
                 setShowBadge(false)
             }
-            val manager = getSystemService(android.app.NotificationManager::class.java)
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
     }
@@ -152,7 +156,7 @@ class JniInferenceService : androidx.core.app.Service() {
     }
 
     private fun getMainActivityClass(): Class<*> {
-        return Class.forName("${packageName}.MainActivity")
+        return Class.forName("${applicationContext.packageName}.MainActivity")
     }
 
     private fun findModelForPath(modelPath: String): ModelInfo? {
