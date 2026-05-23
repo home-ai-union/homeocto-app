@@ -280,6 +280,21 @@ class JniInferenceService : Service() {
             return
         }
 
+        // 检查是否需要下载模型（在锁外执行suspend函数）
+        val defaultModel = ModelInfo.DEFAULT_MODEL
+        val downloadDir = File(getExternalFilesDir(null), "models")
+        val ggufFile = File(downloadDir, defaultModel.ggufFileName)
+        val mmprojFile = File(downloadDir, defaultModel.mmprojFileName)
+        
+        val needsDownload = !ggufFile.exists()
+        
+        if (needsDownload) {
+            // 在锁外执行下载
+            Log.i(TAG, "Model file not found, starting automatic download...")
+            downloadModel(defaultModel)
+        }
+        
+        // 下载完成后，在锁内加载模型
         synchronized(modelLoadLock) {
             // 双重检查，避免并发加载
             if (isModelLoaded) {
@@ -290,18 +305,6 @@ class JniInferenceService : Service() {
             updateNotification("AI Inference Service (loading model...)")
 
             try {
-                // 加载默认模型
-                val defaultModel = ModelInfo.DEFAULT_MODEL
-                val downloadDir = File(getExternalFilesDir(null), "models")
-                val ggufFile = File(downloadDir, defaultModel.ggufFileName)
-                val mmprojFile = File(downloadDir, defaultModel.mmprojFileName)
-
-                // 检查模型文件是否存在，不存在则自动下载
-                if (!ggufFile.exists()) {
-                    Log.i(TAG, "Model file not found, starting automatic download...")
-                    downloadModel(defaultModel)
-                }
-
                 val mmprojPath = if (mmprojFile.exists()) mmprojFile.absolutePath else null
                 
                 val success = engine.loadModel(
