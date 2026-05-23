@@ -262,12 +262,32 @@ jobs:
           echo "Building libhomeocto_llama.so with CMake..."
           cd android/app
           
+          # Find CMake in NDK or use system CMake
+          if [ -d "$ANDROID_NDK_HOME/build/cmake" ]; then
+            CMAKE_BIN=$(find $ANDROID_NDK_HOME/build/cmake -name "cmake" -type f | head -1)
+            if [ -z "$CMAKE_BIN" ]; then
+              # Try to find cmake executable
+              CMAKE_BIN=$(find $ANDROID_NDK_HOME/build/cmake -name "cmake" | head -1)
+            fi
+          fi
+          
+          # Fallback to system cmake if not found in NDK
+          if [ -z "$CMAKE_BIN" ] || [ ! -f "$CMAKE_BIN" ]; then
+            CMAKE_BIN=$(which cmake)
+            if [ -z "$CMAKE_BIN" ]; then
+              echo "ERROR: cmake not found"
+              exit 1
+            fi
+          fi
+          
+          echo "Using CMake: $CMAKE_BIN"
+          
           # Create build directory
           mkdir -p .cxx/Release/arm64-v8a
           cd .cxx/Release/arm64-v8a
           
           # Configure with CMake
-          $ANDROID_NDK_HOME/build/cmake/cmake.sh \
+          $CMAKE_BIN \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=ON \
             -DLLAMA_BUILD_COMMON=ON \
@@ -276,7 +296,10 @@ jobs:
             -DGGML_LLAMAFILE=ON \
             -DANDROID_ABI=arm64-v8a \
             -DANDROID_PLATFORM=android-21 \
+            -DANDROID_NDK=$ANDROID_NDK_HOME \
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
+            -DCMAKE_MAKE_PROGRAM=$(which ninja || echo "make") \
+            -G "Unix Makefiles" \
             ../../src/main/cpp
           
           # Build
