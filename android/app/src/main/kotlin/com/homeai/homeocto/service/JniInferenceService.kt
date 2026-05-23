@@ -1,7 +1,11 @@
 package com.homeai.homeocto.service
 
 import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -22,6 +26,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import java.io.File
 import java.util.UUID
@@ -36,7 +41,7 @@ import kotlin.coroutines.suspendCoroutine
  * - GET  /health                    - Health check
  * - POST /v1/chat/completions       - Chat completions (text + images)
  */
-class JniInferenceService : androidx.core.app.Service() {
+class JniInferenceService : Service() {
 
     companion object {
         private const val TAG = "JniInferenceService"
@@ -48,7 +53,7 @@ class JniInferenceService : androidx.core.app.Service() {
         const val DEFAULT_PORT = 8080
     }
 
-    private var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>? = null
+    private var server: Any? = null
     private val engine = JniLlamaEngine.instance
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -115,7 +120,10 @@ class JniInferenceService : androidx.core.app.Service() {
     }
 
     private fun stopServer() {
-        server?.stop(1000, 2000)
+        (server as? io.ktor.server.engine.ApplicationEngine)?.stop(
+            gracePeriodMillis = 1000,
+            timeoutMillis = 2000
+        )
         server = null
         Log.i(TAG, "HTTP server stopped")
     }
@@ -130,7 +138,7 @@ class JniInferenceService : androidx.core.app.Service() {
                 description = "AI inference service running OpenAI-compatible API"
                 setShowBadge(false)
             }
-            val manager = getSystemService(android.app.NotificationManager::class.java)
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
     }
@@ -152,7 +160,7 @@ class JniInferenceService : androidx.core.app.Service() {
     }
 
     private fun getMainActivityClass(): Class<*> {
-        return Class.forName("${packageName}.MainActivity")
+        return Class.forName("${applicationContext.packageName}.MainActivity")
     }
 
     private fun findModelForPath(modelPath: String): ModelInfo? {
@@ -198,10 +206,11 @@ class JniInferenceService : androidx.core.app.Service() {
                             )
                         )
                     )
-                    write("data: ${Json.encodeToString(ChatCompletionChunk.serializer(), chunk)}\n\n")
+                    val jsonString = Json.encodeToString(chunk)
+                    write("data: $jsonString\n\n".toByteArray())
                     flush()
                 }
-                write("data: [DONE]\n\n")
+                write("data: [DONE]\n\n".toByteArray())
                 flush()
             }
         } else {
