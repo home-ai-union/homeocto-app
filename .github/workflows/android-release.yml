@@ -287,7 +287,7 @@ jobs:
           # Create build directory
           mkdir -p "$BUILD_DIR"
           
-          # Configure with CMake
+          # Configure with CMake (use Ninja generator, available on GH Actions runners)
           $CMAKE_BIN \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=ON \
@@ -299,8 +299,7 @@ jobs:
             -DANDROID_PLATFORM=android-21 \
             -DANDROID_NDK=$ANDROID_NDK_HOME \
             -DCMAKE_TOOLCHAIN_FILE=$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake \
-            -DCMAKE_MAKE_PROGRAM=$(which ninja || echo "make") \
-            -G "Unix Makefiles" \
+            -G "Ninja" \
             -S "$SRC_DIR" \
             -B "$BUILD_DIR"
           
