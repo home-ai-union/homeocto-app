@@ -78,6 +78,9 @@ class JniInferenceService : Service() {
         // Start foreground service
         startForeground(NOTIFICATION_ID, createNotification("AI Inference Service (standby)"))
 
+        // 尝试加载 native 库，失败则不启动引擎
+        JniLlamaEngine.tryLoadNativeLibrary()
+        
         // 仅初始化引擎，不加载模型（延迟到首次调用时）
         engine.initialize(this)
         Log.i(TAG, "Engine initialized, model will be loaded on first request")

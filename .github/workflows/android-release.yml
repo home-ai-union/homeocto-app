@@ -314,7 +314,16 @@ jobs:
             # Copy to jniLibs directory for packaging
             mkdir -p "$JNILIBS_DIR"
             cp "$BUILD_DIR/libhomeocto_llama.so" "$JNILIBS_DIR/"
-            echo "Copied to jniLibs/arm64-v8a/"
+            
+            # Copy all dependency .so files (e.g. libllama-common.so, libmtmd.so)
+            echo "Copying dependency .so files..."
+            find "$BUILD_DIR" -name "lib*.so" -not -name "libhomeocto_llama.so" -type f | while read so_file; do
+              echo "  Copying $(basename $so_file)"
+              cp "$so_file" "$JNILIBS_DIR/"
+            done
+            
+            echo "All .so files copied to jniLibs/arm64-v8a/"
+            ls -lh "$JNILIBS_DIR/"
           else
             echo "ERROR: libhomeocto_llama.so not found after build"
             find "$BUILD_DIR" -name "*.so" -type f
