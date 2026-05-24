@@ -51,6 +51,18 @@ class JniInferenceService : Service() {
 
         // Default HTTP server port
         const val DEFAULT_PORT = 18792
+        
+        // 日志缓冲区（供 PicoClawService 读取）
+        @Volatile
+        var lastLog = ""
+            private set
+        private val logBuffer = StringBuilder()
+        private const val MAX_LOG_SIZE = 32 * 1024 // 32KB
+        
+        // 保存当前运行的实例引用
+        @Volatile
+        var instance: JniInferenceService? = null
+            private set
     }
 
     private var server: Any? = null
@@ -69,6 +81,7 @@ class JniInferenceService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
         createNotificationChannel()
     }
 
@@ -95,36 +108,56 @@ class JniInferenceService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        appendLog("JniInferenceService destroying...")
         stopServer()
         engine.destroy()
         serviceScope.cancel()
+        appendLog("JniInferenceService destroyed")
+        instance = null
     }
 
     private fun startServer(port: Int) {
-        server = embeddedServer(Netty, port = port, watchPaths = emptyList()) {
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    coerceInputValues = true
-                })
-            }
+        try {
+            appendLog("Starting llama HTTP server on port $port...")
+            
+            server = embeddedServer(Netty, port = port, watchPaths = emptyList()) {
+                install(ContentNegotiation) {
+                    json(Json {
+                        ignoreUnknownKeys = true
+                        coerceInputValues = true
+                    })
+                }
 
-            routing {
-                get("/health") { handleHealth(call) }
-                post("/v1/chat/completions") { handleChatCompletions(call) }
-            }
-        }.start(wait = false)
+                routing {
+                    get("/health") { handleHealth(call) }
+                    post("/v1/chat/completions") { handleChatCompletions(call) }
+                }
+            }.start(wait = false)
 
-        Log.i(TAG, "HTTP server started on port $port")
+            val serverUrl = "http://127.0.0.1:$port"
+            appendLog("✓ llama HTTP server started successfully")
+            appendLog("🔗 Server URL: $serverUrl")
+            Log.i(TAG, "HTTP server started on port $port, URL: $serverUrl")
+        } catch (e: Exception) {
+            appendLog("✗ Failed to start llama HTTP server: ${e.message}")
+            Log.e(TAG, "Failed to start HTTP server", e)
+            throw e
+        }
     }
 
     private fun stopServer() {
-        (server as? io.ktor.server.engine.ApplicationEngine)?.stop(
-            gracePeriodMillis = 1000,
-            timeoutMillis = 2000
-        )
-        server = null
-        Log.i(TAG, "HTTP server stopped")
+        try {
+            (server as? io.ktor.server.engine.ApplicationEngine)?.stop(
+                gracePeriodMillis = 1000,
+                timeoutMillis = 2000
+            )
+            server = null
+            appendLog("llama HTTP server stopped")
+            Log.i(TAG, "HTTP server stopped")
+        } catch (e: Exception) {
+            appendLog("Error stopping llama HTTP server: ${e.message}")
+            Log.e(TAG, "Error stopping HTTP server", e)
+        }
     }
 
     private fun createNotificationChannel() {
@@ -448,4 +481,25 @@ class JniInferenceService : Service() {
         @SerialName("completion_tokens") val completionTokens: Int,
         @SerialName("total_tokens") val totalTokens: Int
     )
+    
+    /**
+     * 静态方法：获取日志（供 PicoClawService 调用）
+     */
+    @JvmStatic
+    fun getLog(): String {
+        return instance?.getFullLog() ?: ""
+    }
+    
+    @Synchronized
+    private fun getFullLog(): String = logBuffer.toString()
+    
+    @Synchronized
+    private fun appendLog(line: String) {
+        if (line.isEmpty()) return
+        logBuffer.appendLine(line)
+        if (logBuffer.length > MAX_LOG_SIZE) {
+            logBuffer.delete(0, logBuffer.length - MAX_LOG_SIZE)
+        }
+        lastLog = line
+    }
 }
