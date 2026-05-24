@@ -169,7 +169,8 @@ class JniInferenceService : Service() {
     }
 
     private fun getMainActivityClass(): Class<*> {
-        return Class.forName("${applicationContext.packageName}.MainActivity")
+        // Use fixed package name since Kotlin source package doesn't change with applicationId
+        return Class.forName("com.homeai.homeocto.MainActivity")
     }
 
     private fun findModelForPath(modelPath: String): ModelInfo? {
