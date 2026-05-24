@@ -610,14 +610,33 @@ class PicoClawService : Service() {
     private fun startInferenceService() {
         try {
             Log.i(TAG, "Starting JNI Inference Service...")
+            appendLog("[llama] Starting AI inference service...")
+            
             val intent = Intent(this, JniInferenceService::class.java).apply {
                 putExtra("port", JniInferenceService.DEFAULT_PORT)
             }
             startForegroundService(intent)
-            Log.i(TAG, "JNI Inference Service started on port ${JniInferenceService.DEFAULT_PORT}")
+            
+            // 延迟 2 秒后读取 llama 服务的启动日志
+            Thread {
+                Thread.sleep(2000)
+                try {
+                    val llamaLog = JniInferenceService.getLog()
+                    if (llamaLog.isNotEmpty()) {
+                        llamaLog.lineSequence().forEach { line ->
+                            if (line.isNotBlank()) {
+                                appendLog("[llama] $line")
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "Failed to read llama log: ${e.message}")
+                }
+            }.start()
+            
         } catch (e: Exception) {
+            appendLog("[llama] ✗ Failed to start: ${e.message}")
             Log.w(TAG, "Failed to start JNI Inference Service: ${e.message}", e)
-            // 不阻断主服务启动，仅记录警告
         }
     }
 
@@ -627,10 +646,14 @@ class PicoClawService : Service() {
     private fun stopInferenceService() {
         try {
             Log.i(TAG, "Stopping JNI Inference Service...")
+            appendLog("[llama] Stopping AI inference service...")
+            
             val intent = Intent(this, JniInferenceService::class.java)
             stopService(intent)
-            Log.i(TAG, "JNI Inference Service stopped")
+            
+            appendLog("[llama] AI inference service stopped")
         } catch (e: Exception) {
+            appendLog("[llama] ✗ Failed to stop: ${e.message}")
             Log.w(TAG, "Failed to stop JNI Inference Service: ${e.message}", e)
         }
     }
