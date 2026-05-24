@@ -865,10 +865,12 @@ Future<Executables> findExecutables(Directory extractDir) async {
   )) {
     if (entity is File) {
       final name = entity.uri.pathSegments.last;
-      if (name == 'picoclaw-launcher') plainLauncher = entity;
-      if (name == 'picoclaw-launcher.exe') exeLauncher = entity;
-      if (name == 'picoclaw') plainCore = entity;
-      if (name == 'picoclaw.exe') exeCore = entity;
+      if (name == 'picoclaw-launcher' || name == 'homeocto-launcher')
+        plainLauncher = entity;
+      if (name == 'picoclaw-launcher.exe' || name == 'homeocto-launcher.exe')
+        exeLauncher = entity;
+      if (name == 'picoclaw' || name == 'homeocto') plainCore = entity;
+      if (name == 'picoclaw.exe' || name == 'homeocto.exe') exeCore = entity;
     }
   }
 

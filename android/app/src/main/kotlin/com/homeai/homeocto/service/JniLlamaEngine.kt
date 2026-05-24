@@ -15,11 +15,37 @@ class JniLlamaEngine private constructor() {
     companion object {
         private const val TAG = "JniLlamaEngine"
 
-        init {
-            System.loadLibrary("homeocto_llama")
-        }
+        @Volatile
+        private var isNativeLibraryLoaded = false
+        @Volatile
+        private var nativeLibraryLoadFailed = false
 
         val instance = JniLlamaEngine()
+
+        /**
+         * 尝试加载 native 库，失败时仅记录警告
+         */
+        fun tryLoadNativeLibrary() {
+            if (isNativeLibraryLoaded || nativeLibraryLoadFailed) {
+                return
+            }
+            synchronized(this) {
+                if (isNativeLibraryLoaded || nativeLibraryLoadFailed) {
+                    return
+                }
+                try {
+                    System.loadLibrary("homeocto_llama")
+                    isNativeLibraryLoaded = true
+                    Log.i(TAG, "Native library libhomeocto_llama.so loaded successfully")
+                } catch (e: UnsatisfiedLinkError) {
+                    nativeLibraryLoadFailed = true
+                    Log.w(TAG, "Failed to load libhomeocto_llama.so: ${e.message}. Inference service will be unavailable.")
+                } catch (e: Exception) {
+                    nativeLibraryLoadFailed = true
+                    Log.w(TAG, "Failed to load libhomeocto_llama.so: ${e.message}. Inference service will be unavailable.")
+                }
+            }
+        }
     }
 
     // Native methods - JNI interface
@@ -50,6 +76,11 @@ class JniLlamaEngine private constructor() {
      * Must be called once before any other operations.
      */
     fun initialize(context: Context) {
+        if (!isNativeLibraryLoaded) {
+            Log.w(TAG, "Native library not loaded, skipping engine initialization")
+            return
+        }
+
         if (isInitialized) {
             Log.w(TAG, "Engine already initialized")
             return
