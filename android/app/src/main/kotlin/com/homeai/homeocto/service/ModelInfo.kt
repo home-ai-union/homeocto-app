@@ -35,17 +35,7 @@ data class ModelInfo(
 
     companion object {
         val AVAILABLE_MODELS = listOf(
-            ModelInfo(
-                id = "minicpm-v-4",
-                displayName = "MiniCPM-V-4 (Q4_K_M)",
-                description = "Lightweight multimodal model, image/text understanding (4.1B)",
-                ggufFileName = "ggml-model-Q4_K_M.gguf",
-                mmprojFileName = "mmproj-model-f16.gguf",
-                hfRepo = "openbmb/MiniCPM-V-4-gguf",
-                msRepo = "OpenBMB/MiniCPM-V-4-gguf",
-                version = 5
-            ),
-            ModelInfo(
+             ModelInfo(
                 id = "minicpm-v-4_6-instruct",
                 displayName = "MiniCPM-V-4.6 (Q4_K_M)",
                 description = "Next-gen multimodal model, image/text understanding (1.2B)",
@@ -56,6 +46,16 @@ data class ModelInfo(
                 ggufMd5 = "fd778481dd56b6036dd8f9cf7c1519cf",
                 mmprojMd5 = "54aea6e04d752f47309a48f12795a1a3",
                 version = 46
+            ),
+            ModelInfo(
+                id = "minicpm-v-4",
+                displayName = "MiniCPM-V-4 (Q4_K_M)",
+                description = "Lightweight multimodal model, image/text understanding (4.1B)",
+                ggufFileName = "ggml-model-Q4_K_M.gguf",
+                mmprojFileName = "mmproj-model-f16.gguf",
+                hfRepo = "openbmb/MiniCPM-V-4-gguf",
+                msRepo = "OpenBMB/MiniCPM-V-4-gguf",
+                version = 5
             )
         )
 
