@@ -53,6 +53,24 @@
 -dontwarn reactor.blockhound.**
 -dontwarn java.lang.management.**
 
+# Netty optional compression libraries
+-dontwarn com.aayushatharva.brotli4j.**
+-dontwarn com.github.luben.zstd.**
+-dontwarn com.google.protobuf.**
+-dontwarn com.jcraft.jzlib.**
+-dontwarn com.ning.compress.**
+-dontwarn lzma.sdk.**
+-dontwarn net.jpountz.lz4.**
+-dontwarn net.jpountz.xxhash.**
+-dontwarn org.jboss.marshalling.**
+-dontwarn com.oracle.svm.core.annotate.**
+-dontwarn sun.security.x509.**
+
+# Keep Netty classes (required for reflection and dynamic class loading)
+-keep class io.netty.** { *; }
+-keepclassmembers class io.netty.** { *; }
+-keepnames class io.netty.** { *; }
+
 # Keep Ktor serialization classes
 -keep class kotlinx.serialization.** { *; }
 -keepclassmembers class kotlinx.serialization.** { *; }
@@ -60,3 +78,9 @@
 # Keep Ktor server classes
 -keep class io.ktor.** { *; }
 -keepclassmembers class io.ktor.** { *; }
+-keepnames class io.ktor.** { *; }
+
+# Keep all public constructors for Netty/Ktor reflection
+-keepclasseswithmembers,allowobfuscation class * {
+    public <init>(...);
+}
