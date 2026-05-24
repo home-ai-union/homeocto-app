@@ -779,12 +779,12 @@ func shouldSkipDirectory(relPath string) bool {
 func processImageFiles(picoclawRoot, homeoctoRoot string) error {
 	fmt.Println("\n=== Processing image files from docs/imgs/ ===")
 
-	// imgs 源目录在 homeocto-app 中
-	imgsRoot := filepath.Join(picoclawRoot, "docs", "imgs")
+	// imgs 源目录在 homeocto-app 中（而非 picoclaw-fui）
+	imgsRoot := filepath.Join(homeoctoRoot, "docs", "imgs")
 
 	// 检查 imgs 目录是否存在
 	if _, err := os.Stat(imgsRoot); os.IsNotExist(err) {
-		fmt.Println("  ⚠ Warning: docs/imgs directory not found in source, skipping")
+		fmt.Println("  ⚠ Warning: docs/imgs directory not found in homeocto-app, skipping")
 		return nil
 	}
 
