@@ -63,6 +63,14 @@ class JniInferenceService : Service() {
         @Volatile
         var instance: JniInferenceService? = null
             private set
+        
+        /**
+         * 静态方法：获取日志（供 PicoClawService 调用）
+         */
+        @JvmStatic
+        fun getLog(): String {
+            return instance?.getFullLog() ?: ""
+        }
     }
 
     private var server: Any? = null
@@ -482,14 +490,7 @@ class JniInferenceService : Service() {
         @SerialName("total_tokens") val totalTokens: Int
     )
     
-    /**
-     * 静态方法：获取日志（供 PicoClawService 调用）
-     */
-    @JvmStatic
-    fun getLog(): String {
-        return instance?.getFullLog() ?: ""
-    }
-    
+
     @Synchronized
     private fun getFullLog(): String = logBuffer.toString()
     
