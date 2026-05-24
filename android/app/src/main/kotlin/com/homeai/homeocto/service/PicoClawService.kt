@@ -302,6 +302,10 @@ class PicoClawService : Service() {
                     ensureOnboarded(gatewayBinary)
                     // 启动前先清理可能残留的旧进程
                     killPicoClawOrphanProcesses()
+                    
+                    // 启动 JNI 推理服务（本地 AI 推理）
+                    startInferenceService()
+                    
                     runWebService()
                 } catch (e: Exception) {
                     if (!stopped) {
@@ -601,6 +605,37 @@ class PicoClawService : Service() {
     }
 
     /**
+     * 启动 JNI 推理服务（本地 AI 推理）
+     */
+    private fun startInferenceService() {
+        try {
+            Log.i(TAG, "Starting JNI Inference Service...")
+            val intent = Intent(this, JniInferenceService::class.java).apply {
+                putExtra("port", JniInferenceService.DEFAULT_PORT)
+            }
+            startForegroundService(intent)
+            Log.i(TAG, "JNI Inference Service started on port ${JniInferenceService.DEFAULT_PORT}")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to start JNI Inference Service: ${e.message}", e)
+            // 不阻断主服务启动，仅记录警告
+        }
+    }
+
+    /**
+     * 停止 JNI 推理服务
+     */
+    private fun stopInferenceService() {
+        try {
+            Log.i(TAG, "Stopping JNI Inference Service...")
+            val intent = Intent(this, JniInferenceService::class.java)
+            stopService(intent)
+            Log.i(TAG, "JNI Inference Service stopped")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to stop JNI Inference Service: ${e.message}", e)
+        }
+    }
+
+    /**
      * 停止服务（web 进程会在退出时自动停止其管理的 gateway）
      */
     private fun stopService() {
@@ -647,6 +682,9 @@ class PicoClawService : Service() {
             } catch (_: InterruptedException) {}
         }
         serviceThread = null
+
+        // 停止 JNI 推理服务
+        stopInferenceService()
 
         // 清理可能残留的孤儿进程（包括 web 服务自己启动的 gateway）
         killPicoClawOrphanProcesses()
