@@ -51,12 +51,18 @@ func getDefaultConfig() SyncConfig {
 			"pubspec.yaml",
 			// Android 配置 - 标记 **
 			"android\\app\\build.gradle.kts",
+			"android\\app\\proguard-rules.pro",
 			"android\\app\\src\\main\\AndroidManifest.xml",
 			// 本地化文件 - 标记 **
 			"lib\\l10n\\app_en.arb",
 			"lib\\l10n\\app_zh.arb",
 			// Android Kotlin 文件 - 标记 **
 			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\PicoClawService.kt",
+			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\CpuFeatures.kt",
+			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\JniInferenceService.kt",
+			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\JniLlamaEngine.kt",
+			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\ModelDownloadService.kt",
+			"android\\app\\src\\main\\kotlin\\com\\homeai\\homeocto\\service\\ModelInfo.kt",
 			"tools\\fetch_core_local.dart",
 		},
 		// 需要同步的目录（空，因为都是文件）
