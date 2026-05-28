@@ -227,12 +227,8 @@ class _LocalChatPageState extends State<LocalChatPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'AI Chat (本地)',
+          'AI Chat',
           style: GoogleFonts.inter(fontWeight: FontWeight.w700),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           // 服务器状态指示
