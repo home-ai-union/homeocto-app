@@ -85,6 +85,8 @@ class JniInferenceService : Service() {
     private var isModelDownloading = false
     @Volatile
     private var downloadProgress = 0.0f
+    @Volatile
+    private var selectedModelId: String? = null  // 用户选择的模型ID
     private val modelLoadLock = Any()
 
     override fun onCreate() {
@@ -223,8 +225,9 @@ class JniInferenceService : Service() {
 
     private suspend fun handleHealth(call: ApplicationCall) {
         val response = HealthResponse(
-            status = if (isModelDownloading) "downloading" else "ok",
+            status = if (isModelDownloading) "downloading" else if (isModelLoaded) "ok" else "starting",
             modelLoaded = isModelLoaded,
+            loadedModelId = selectedModelId,
             modelVersion = engine.getModelVersion(),
             downloadProgress = if (isModelDownloading) downloadProgress else null
         )
@@ -318,25 +321,111 @@ class JniInferenceService : Service() {
     }
 
     /**
+     * 公开方法：加载用户选择的模型
+     * 从模型管理页面调用
+     */
+    fun loadSelectedModel(modelId: String): Boolean {
+        val modelInfo = ModelInfo.findById(modelId)
+        if (modelInfo == null) {
+            Log.e(TAG, "Model not found: $modelId")
+            return false
+        }
+
+        synchronized(modelLoadLock) {
+            // 如果已经加载了相同的模型，直接返回成功
+            if (isModelLoaded && selectedModelId == modelId) {
+                Log.i(TAG, "Model already loaded: $modelId")
+                return true
+            }
+
+            // 如果已加载了不同的模型，先卸载
+            if (isModelLoaded) {
+                Log.i(TAG, "Unloading previous model: $selectedModelId")
+                engine.unloadModel()
+                isModelLoaded = false
+            }
+
+            // 检查模型文件是否存在
+            val downloadDir = File(getExternalFilesDir(null), "models")
+            val ggufFile = File(downloadDir, modelInfo.ggufFileName)
+            val mmprojFile = File(downloadDir, modelInfo.mmprojFileName)
+
+            if (!ggufFile.exists()) {
+                Log.e(TAG, "Model file not found: ${modelInfo.ggufFileName}")
+                return false
+            }
+
+            Log.i(TAG, "Loading selected model: ${modelInfo.displayName}")
+            updateNotification("AI Inference Service (loading ${modelInfo.displayName}...)")
+
+            try {
+                val mmprojPath = if (mmprojFile.exists()) mmprojFile.absolutePath else null
+                
+                val success = engine.loadModel(
+                    modelPath = ggufFile.absolutePath,
+                    mmprojPath = mmprojPath,
+                    modelVersion = modelInfo.version
+                )
+
+                if (success) {
+                    isModelLoaded = true
+                    selectedModelId = modelId
+                    Log.i(TAG, "Model loaded successfully: ${modelInfo.displayName}")
+                    updateNotification("AI Inference Service (ready: ${modelInfo.displayName})")
+                    return true
+                } else {
+                    Log.e(TAG, "Failed to load model: ${modelInfo.displayName}")
+                    updateNotification("AI Inference Service (model load failed)")
+                    return false
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading model: ${modelInfo.displayName}", e)
+                updateNotification("AI Inference Service (model load failed)")
+                return false
+            }
+        }
+    }
+
+    /**
+     * 获取当前加载的模型ID
+     */
+    fun getLoadedModelId(): String? {
+        return if (isModelLoaded) selectedModelId else null
+    }
+
+    /**
+     * 检查模型文件是否存在
+     */
+    fun checkModelFilesExist(modelId: String): Boolean {
+        val modelInfo = ModelInfo.findById(modelId) ?: return false
+        val downloadDir = File(getExternalFilesDir(null), "models")
+        val ggufFile = File(downloadDir, modelInfo.ggufFileName)
+        val mmprojFile = File(downloadDir, modelInfo.mmprojFileName)
+        return ggufFile.exists() && mmprojFile.exists()
+    }
+    /**
      * 确保模型已加载（延迟加载，仅在首次调用时执行）
+     * 如果用户已选择模型，加载用户选择的模型；否则加载默认模型
      */
     private suspend fun ensureModelLoaded() {
         if (isModelLoaded) {
             return
         }
 
+        // 使用用户选择的模型，或默认模型
+        val modelToLoad = selectedModelId?.let { ModelInfo.findById(it) } ?: ModelInfo.DEFAULT_MODEL
+        
         // 检查是否需要下载模型（在锁外执行suspend函数）
-        val defaultModel = ModelInfo.DEFAULT_MODEL
         val downloadDir = File(getExternalFilesDir(null), "models")
-        val ggufFile = File(downloadDir, defaultModel.ggufFileName)
-        val mmprojFile = File(downloadDir, defaultModel.mmprojFileName)
+        val ggufFile = File(downloadDir, modelToLoad.ggufFileName)
+        val mmprojFile = File(downloadDir, modelToLoad.mmprojFileName)
         
         val needsDownload = !ggufFile.exists()
         
         if (needsDownload) {
             // 在锁外执行下载
             Log.i(TAG, "Model file not found, starting automatic download...")
-            downloadModel(defaultModel)
+            downloadModel(modelToLoad)
         }
         
         // 下载完成后，在锁内加载模型
@@ -346,7 +435,7 @@ class JniInferenceService : Service() {
                 return
             }
 
-            Log.i(TAG, "Loading default model on first request...")
+            Log.i(TAG, "Loading model on first request: ${modelToLoad.displayName}")
             updateNotification("AI Inference Service (loading model...)")
 
             try {
@@ -355,15 +444,19 @@ class JniInferenceService : Service() {
                 val success = engine.loadModel(
                     modelPath = ggufFile.absolutePath,
                     mmprojPath = mmprojPath,
-                    modelVersion = defaultModel.version
+                    modelVersion = modelToLoad.version
                 )
 
                 if (success) {
                     isModelLoaded = true
-                    Log.i(TAG, "Model loaded successfully: ${defaultModel.displayName}")
+                    // 如果是自动加载默认模型，更新selectedModelId
+                    if (selectedModelId == null) {
+                        selectedModelId = modelToLoad.id
+                    }
+                    Log.i(TAG, "Model loaded successfully: ${modelToLoad.displayName}")
                     updateNotification("AI Inference Service (ready)")
                 } else {
-                    throw IllegalStateException("Failed to load model: ${defaultModel.displayName}")
+                    throw IllegalStateException("Failed to load model: ${modelToLoad.displayName}")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to load model on first request", e)
@@ -424,6 +517,7 @@ class JniInferenceService : Service() {
     data class HealthResponse(
         val status: String,
         val modelLoaded: Boolean,
+        val loadedModelId: String? = null,
         val modelVersion: Int,
         val downloadProgress: Float? = null
     )

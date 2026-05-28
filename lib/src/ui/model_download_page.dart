@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:homeocto_app/src/generated/l10n/app_localizations.dart';
+import 'package:homeocto_app/src/core/llama_channel.dart';
 
 /// 模型数据类
 class ModelInfo {
@@ -101,6 +102,7 @@ class _ModelDownloadPageState extends State<ModelDownloadPage> {
   String _modelStatus = '未初始化';
   bool _isModelLoaded = false;
   bool _modelFileExists = false;
+  bool _isLoading = false; // 加载模型时的loading状态
 
   @override
   void initState() {
@@ -111,11 +113,16 @@ class _ModelDownloadPageState extends State<ModelDownloadPage> {
 
   /// 检查模型文件是否存在
   Future<void> _checkModelFiles() async {
-    // TODO: 实现文件检查逻辑
-    // 这里应该检查本地是否存在模型文件
-    setState(() {
-      _modelFileExists = false; // 临时值
-    });
+    try {
+      final exists = await LlamaChannel.modelFilesExist(_selectedModel.id);
+      if (mounted) {
+        setState(() {
+          _modelFileExists = exists;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to check model files: $e');
+    }
   }
 
   /// 更新模型状态显示
@@ -181,7 +188,7 @@ class _ModelDownloadPageState extends State<ModelDownloadPage> {
   }
 
   /// 加载模型
-  void _loadModel() {
+  Future<void> _loadModel() async {
     if (!_modelFileExists) {
       ScaffoldMessenger.of(
         context,
@@ -190,13 +197,40 @@ class _ModelDownloadPageState extends State<ModelDownloadPage> {
     }
 
     setState(() {
-      _isModelLoaded = true;
-      _updateModelStatus();
+      _isLoading = true;
     });
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('模型加载成功！')));
+    try {
+      // 加载模型（loadModel 内部会自动启动服务如果需要）
+      final success = await LlamaChannel.loadModel(_selectedModel.id);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isModelLoaded = success;
+          _updateModelStatus();
+        });
+
+        if (success) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('模型加载成功！')));
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('模型加载失败，请重试')));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('加载失败: $e')));
+      }
+    }
   }
 
   /// 删除模型文件
@@ -277,10 +311,19 @@ class _ModelDownloadPageState extends State<ModelDownloadPage> {
               (model) => _ModelCard(
                 model: model,
                 isSelected: model.id == _selectedModel.id,
-                onTap: () {
+                onTap: () async {
                   setState(() {
                     _selectedModel = model;
                   });
+
+                  // 重新检查文件存在性
+                  await _checkModelFiles();
+
+                  // 重置加载状态
+                  setState(() {
+                    _isModelLoaded = false;
+                  });
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('已选择: ${model.displayName}')),
                   );
@@ -317,14 +360,30 @@ class _ModelDownloadPageState extends State<ModelDownloadPage> {
                                 _downloadStatus == DownloadStatus.downloading
                                 ? null
                                 : _startDownload,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: colorScheme.onSurface,
+                            ),
                             child: const Text('下载'),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: FilledButton(
-                            onPressed: _modelFileExists ? _loadModel : null,
-                            child: Text(_isModelLoaded ? '重新加载' : '加载模型'),
+                            onPressed: _modelFileExists && !_isLoading
+                                ? _loadModel
+                                : null,
+                            child: _isLoading
+                                ? SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        colorScheme.onPrimary,
+                                      ),
+                                    ),
+                                  )
+                                : Text(_isModelLoaded ? '重新加载' : '加载模型'),
                           ),
                         ),
                       ],
