@@ -10,6 +10,7 @@ import 'package:homeocto_app/src/ui/dashboard_page.dart';
 import 'package:homeocto_app/src/ui/config_page.dart';
 import 'package:homeocto_app/src/ui/webview_page.dart';
 import 'package:homeocto_app/src/ui/log_page.dart';
+import 'package:homeocto_app/src/ui/local_chat_page.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
@@ -248,20 +249,27 @@ class _MainShellState extends State<MainShell>
       ),
       _buildNavButton(
         index: 1,
+        tooltip: 'AI Chat',
+        icon: Icons.smart_toy_outlined,
+        selectedIcon: Icons.smart_toy,
+        colorScheme: colorScheme,
+      ),
+      _buildNavButton(
+        index: 2,
         tooltip: 'Web',
         icon: Icons.language_outlined,
         selectedIcon: Icons.language,
         colorScheme: colorScheme,
       ),
       _buildNavButton(
-        index: 2,
+        index: 3,
         tooltip: 'Logs',
         icon: Icons.article_outlined,
         selectedIcon: Icons.article,
         colorScheme: colorScheme,
       ),
       _buildNavButton(
-        index: 3,
+        index: 4,
         tooltip: 'Settings',
         icon: Icons.settings_outlined,
         selectedIcon: Icons.settings,
@@ -285,6 +293,7 @@ class _MainShellState extends State<MainShell>
             index: _selectedIndex,
             children: [
               const DashboardPage(),
+              const LocalChatPage(),
               Consumer<ServiceManager>(
                 builder: (context, service, _) => WebViewPage(
                   url: service.webUrl,
