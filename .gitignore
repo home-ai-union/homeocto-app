@@ -88,6 +88,7 @@ app.*.map.json
 **/android/local.properties
 **/android/**/GeneratedPluginRegistrant.java
 **/android/.cxx/
+**/android/minicpm_v_demo/.cxx/
 
 # Android signing files (NEVER commit these)
 key.properties
