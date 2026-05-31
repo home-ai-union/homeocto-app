@@ -1,0 +1,9 @@
+G:\code\homeocto-app\android\minicpm_v_demo\src\main\cpp\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\common\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\ggml\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\ggml\src\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\ggml\src\ggml-cpu\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\src\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\tools\mtmd\CMakeLists.txt
+G:\code\homeocto-app\llama.cpp\vendor\cpp-httplib\CMakeLists.txt

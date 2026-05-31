@@ -1,0 +1,3 @@
+G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/CMakeFiles/kleidiai_download-populate.dir
+G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/CMakeFiles/edit_cache.dir
+G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/CMakeFiles/rebuild_cache.dir

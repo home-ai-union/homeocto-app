@@ -1,0 +1,21 @@
+# ninja log v5
+1	127	8018468779948453	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-mkdir	abe6b147f7a1e1f8
+1	127	8018468779948453	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-mkdir	abe6b147f7a1e1f8
+128	12571	8018468904400236	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-download	ff3a88b6cd4a0ab1
+128	12571	8018468904400236	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-download	ff3a88b6cd4a0ab1
+12571	12615	8018468904840273	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-update	2fefb60925ba4a89
+12571	12615	8018468904840273	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-update	2fefb60925ba4a89
+12616	12661	8018468905300226	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-patch	bd27a333a2aaf81b
+12616	12661	8018468905300226	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-patch	bd27a333a2aaf81b
+12661	12703	8018468905720234	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-configure	3c8e96249fca07cc
+12661	12703	8018468905720234	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-configure	3c8e96249fca07cc
+12703	12742	8018468906120237	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-build	dd304d544e0189a2
+12703	12742	8018468906120237	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-build	dd304d544e0189a2
+12742	12784	8018468906535454	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-install	5c0f7f1d35882ac7
+12742	12784	8018468906535454	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-install	5c0f7f1d35882ac7
+12784	12826	8018468906941037	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-test	56dc5c9fdf7d2ddd
+12784	12826	8018468906941037	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-test	56dc5c9fdf7d2ddd
+12827	12884	8018468907534923	CMakeFiles/kleidiai_download-populate-complete	8f5defa5fe703667
+12827	12884	8018468907534923	kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-done	8f5defa5fe703667
+12827	12884	8018468907534923	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/CMakeFiles/kleidiai_download-populate-complete	8f5defa5fe703667
+12827	12884	8018468907534923	G:/code/homeocto-app/android/minicpm_v_demo/.cxx/Release/2d136k31/arm64-v8a/_deps/kleidiai_download-subbuild/kleidiai_download-populate-prefix/src/kleidiai_download-populate-stamp/kleidiai_download-populate-done	8f5defa5fe703667

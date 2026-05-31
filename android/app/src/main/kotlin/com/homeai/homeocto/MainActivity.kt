@@ -25,6 +25,27 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         methodChannel = PicoClawMethodChannel(this, flutterEngine)
+        
+        // 注册 Chat MethodChannel，用于启动原生 MiniCPM-V 聊天页面
+        io.flutter.plugin.common.MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.homeocto.app/chat"
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "openChat" -> {
+                    try {
+                        val intent = Intent(this, com.example.minicpm_v_demo.MainActivity::class.java)
+                        startActivity(intent)
+                        result.success(null)
+                    } catch (e: Exception) {
+                        result.error("CHAT_ERROR", "Failed to open chat: ${e.message}", null)
+                    }
+                }
+                else -> {
+                    result.notImplemented()
+                }
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {

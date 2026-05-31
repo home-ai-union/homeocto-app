@@ -7,6 +7,7 @@ import 'package:homeocto_app/src/generated/l10n/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:homeocto_app/src/ui/widgets/tv_focusable.dart';
+import 'package:homeocto_app/src/native/minicpm_native_bridge.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -151,6 +152,67 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+                // MiniCPM AI Chat quick access button
+                Padding(
+                  padding: const EdgeInsets.only(top: 16.0, bottom: 32.0),
+                  child: TVFocusable(
+                    onTap: () async {
+                      final launched = await MiniCPMNativeBridge.openMiniCPMChat();
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            launched
+                                ? 'Opening MiniCPM-V Chat...'
+                                : 'Failed to open MiniCPM-V Chat. Only available on Android.',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 24,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withAlpha(
+                          ((0.15).clamp(0.0, 1.0) * 255).round(),
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.primary.withAlpha(
+                            ((0.3).clamp(0.0, 1.0) * 255).round(),
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Remix.robot_2_fill,
+                            size: 28,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 16),
+                          Flexible(
+                            child: Text(
+                              'AI Chat (MiniCPM-V)',
+                              style: GoogleFonts.inter(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: colorScheme.primary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
                 // Glassmorphism Status Card

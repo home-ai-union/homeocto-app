@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Required for ModelDownloadService to keep the model download alive -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <application>
+        <!-- Main chat activity - launched from Flutter via MethodChannel -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MiniCPMVdemo"
+            android:configChanges="locale|layoutDirection"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Model management activity -->
+        <activity
+            android:name=".ModelManagerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MiniCPMVdemo"
+            android:configChanges="locale|layoutDirection"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- Foreground download service -->
+        <service
+            android:name=".ModelDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+    </application>
+
+</manifest>

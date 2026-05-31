@@ -10,6 +10,7 @@ import 'package:homeocto_app/src/ui/dashboard_page.dart';
 import 'package:homeocto_app/src/ui/config_page.dart';
 import 'package:homeocto_app/src/ui/webview_page.dart';
 import 'package:homeocto_app/src/ui/log_page.dart';
+import 'package:homeocto_app/src/ui/chat_page.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
@@ -107,8 +108,29 @@ class _MainShellState extends State<MainShell>
     _saveFn = fn;
   }
 
+  Widget _buildModelDownloadPage() {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Model Download')),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.download, size: 64, color: Colors.blue),
+            SizedBox(height: 16),
+            Text(
+              '模型下载功能',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text('即将推出，敬请期待！'),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _onNavTap(int index) async {
-    if (_selectedIndex == 3 && index != 3 && _configIsDirty) {
+    if (_selectedIndex == 5 && index != 5 && _configIsDirty) {
       final l10n = AppLocalizations.of(context)!;
       final result = await showDialog<bool>(
         context: context,
@@ -255,13 +277,27 @@ class _MainShellState extends State<MainShell>
       ),
       _buildNavButton(
         index: 2,
+        tooltip: 'AI Chat',
+        icon: Icons.smart_toy_outlined,
+        selectedIcon: Icons.smart_toy,
+        colorScheme: colorScheme,
+      ),
+      _buildNavButton(
+        index: 3,
+        tooltip: 'Model Download',
+        icon: Icons.download_outlined,
+        selectedIcon: Icons.download,
+        colorScheme: colorScheme,
+      ),
+      _buildNavButton(
+        index: 4,
         tooltip: 'Logs',
         icon: Icons.article_outlined,
         selectedIcon: Icons.article,
         colorScheme: colorScheme,
       ),
       _buildNavButton(
-        index: 3,
+        index: 5,
         tooltip: 'Settings',
         icon: Icons.settings_outlined,
         selectedIcon: Icons.settings,
@@ -291,6 +327,8 @@ class _MainShellState extends State<MainShell>
                   onGoToDashboard: () => _onNavTap(0),
                 ),
               ),
+              const ChatPage(),
+              _buildModelDownloadPage(),
               const LogPage(),
               ConfigPage(
                 onDirtyChanged: _onConfigDirtyChanged,

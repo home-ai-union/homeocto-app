@@ -41,3 +41,12 @@
 -keep class javax.xml.stream.** { *; }
 -keep class org.apache.tika.** { *; }
 -dontwarn org.apache.tika.**
+
+# MiniCPM-V library - prevent JNI and Activity classes from being obfuscated
+-keep class com.example.minicpm_v_demo.** { *; }
+-keep class com.example.minicpm_v_demo.ModelDownloadService { *; }
+
+# Preserve JNI native method signatures
+-keepclasseswithmembernames class com.example.minicpm_v_demo.LlamaEngine {
+    native <methods>;
+}

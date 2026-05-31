@@ -1,0 +1,10 @@
+prefix=C:/Program Files (x86)/minicpm_v_demo
+exec_prefix=C:/Program Files (x86)/minicpm_v_demo
+libdir=C:/Program Files (x86)/minicpm_v_demo/lib
+includedir=C:/Program Files (x86)/minicpm_v_demo/include
+
+Name: llama
+Description: Port of Facebook's LLaMA model in C/C++
+Version: 0.0.9135
+Libs: -L${libdir} -lggml -lggml-base -lllama
+Cflags: -I${includedir}

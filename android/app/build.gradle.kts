@@ -156,6 +156,12 @@ dependencies {
     implementation("com.umeng.umsdk:common:9.9.1")
     implementation("com.umeng.umsdk:asms:1.8.7.2")
     implementation("javax.xml.stream:stax-api:1.0-2")
+
+    // MiniCPM-V library module
+    implementation(project(":minicpm_v_demo"))
+
+    // Markdown rendering (MiniCPM chat requires)
+    implementation("io.noties.markwon:core:4.6.2")
 }
 
 // Generate Firebase resources from dart-define

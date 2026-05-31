@@ -1,0 +1,160 @@
+{
+  "buildFiles": [
+    "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\src\\main\\cpp\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\common\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\ggml\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\ggml\\src\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\ggml\\src\\ggml-cpu\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\src\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\tools\\mtmd\\CMakeLists.txt",
+    "G:\\code\\homeocto-app\\llama.cpp\\vendor\\cpp-httplib\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "llama-mtmd-cli::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "llama-mtmd-cli",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\llama-mtmd-cli",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama-common.so",
+        "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\libmtmd.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "llama-qwen2vl-cli::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "llama-qwen2vl-cli",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\llama-qwen2vl-cli",
+      "runtimeFiles": []
+    },
+    "minicpm_v_demo::@6890427a1f51a3e7e1df": {
+      "artifactName": "minicpm_v_demo",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\libminicpm_v_demo.so",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama-common.so",
+        "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\libmtmd.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "cpp-httplib::@e1f36686b082eccf6cbc": {
+      "artifactName": "cpp-httplib",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\build-llama\\vendor\\cpp-httplib\\libcpp-httplib.a",
+      "runtimeFiles": []
+    },
+    "llama::@b791850eb95f38641ccb": {
+      "artifactName": "llama",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama.so",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "llama-llava-cli::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "llama-llava-cli",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\llama-llava-cli",
+      "runtimeFiles": []
+    },
+    "llama-minicpmv-cli::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "llama-minicpmv-cli",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\llama-minicpmv-cli",
+      "runtimeFiles": []
+    },
+    "mtmd::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "mtmd",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\libmtmd.so",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "llama-gemma3-cli::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "llama-gemma3-cli",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\llama-gemma3-cli",
+      "runtimeFiles": []
+    },
+    "ggml::@23533c6d68a59d54598d": {
+      "artifactName": "ggml",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "llama-mtmd-debug::@f3824e2fb8aefb11ee4b": {
+      "artifactName": "llama-mtmd-debug",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\llama-mtmd-debug",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama-common.so",
+        "G:\\code\\homeocto-app\\build\\minicpm_v_demo\\intermediates\\cxx\\Release\\2d136k31\\obj\\arm64-v8a\\libmtmd.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "ggml-cpu::@23533c6d68a59d54598d": {
+      "artifactName": "ggml-cpu",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so",
+        "C:\\Android\\Sdk\\ndk\\27.0.12077973\\toolchains\\llvm\\prebuilt\\windows-x86_64\\lib\\clang\\18\\lib\\linux\\aarch64\\libomp.so"
+      ]
+    },
+    "llama-common::@8bf2afb4d8037c7b7d92": {
+      "artifactName": "llama-common",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama-common.so",
+      "runtimeFiles": [
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libllama.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-cpu.so",
+        "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so"
+      ]
+    },
+    "llama-common-base::@8bf2afb4d8037c7b7d92": {
+      "artifactName": "llama-common-base",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\build-llama\\common\\libllama-common-base.a",
+      "runtimeFiles": []
+    },
+    "ggml-base::@23533c6d68a59d54598d": {
+      "artifactName": "ggml-base",
+      "abi": "arm64-v8a",
+      "output": "G:\\code\\homeocto-app\\android\\minicpm_v_demo\\.cxx\\Release\\2d136k31\\arm64-v8a\\bin\\libggml-base.so",
+      "runtimeFiles": []
+    }
+  }
+}

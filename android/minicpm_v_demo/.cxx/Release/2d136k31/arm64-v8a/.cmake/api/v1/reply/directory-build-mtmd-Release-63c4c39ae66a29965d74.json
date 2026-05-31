@@ -1,0 +1,66 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"G:/code/homeocto-app/llama.cpp/tools/mtmd/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 80,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"G:/code/homeocto-app/build/minicpm_v_demo/intermediates/cxx/Release/2d136k31/obj/arm64-v8a/libmtmd.so"
+			],
+			"targetId" : "mtmd::@f3824e2fb8aefb11ee4b",
+			"targetIndex" : 14,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"G:/code/homeocto-app/llama.cpp/tools/mtmd/debug/mtmd-debug.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"G:/code/homeocto-app/llama.cpp/tools/mtmd/mtmd.h",
+				"G:/code/homeocto-app/llama.cpp/tools/mtmd/mtmd-helper.h"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "build-mtmd",
+		"source" : "G:/code/homeocto-app/llama.cpp/tools/mtmd"
+	}
+}

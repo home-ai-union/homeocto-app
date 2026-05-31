@@ -310,6 +310,29 @@ class PicoClawMethodChannel(
                         result.error("COPY_FAILED", e.message, null)
                     }
                 }
+
+                // MiniCPM-V Activity launch methods
+                "openModelManager" -> {
+                    try {
+                        val intent = Intent(context, com.example.minicpm_v_demo.ModelManagerActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("OPEN_MODEL_MANAGER_FAILED", e.message, null)
+                    }
+                }
+                "openMiniCPMChat" -> {
+                    try {
+                        val intent = Intent(context, com.example.minicpm_v_demo.MainActivity::class.java)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("OPEN_MINICPM_CHAT_FAILED", e.message, null)
+                    }
+                }
+
                 else -> {
                     result.notImplemented()
                 }

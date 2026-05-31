@@ -8,6 +8,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:homeocto_app/src/core/app_theme.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:homeocto_app/src/ui/widgets/tv_focusable.dart';
+import 'package:homeocto_app/src/native/minicpm_native_bridge.dart';
 
 const String _githubRepoUrl = 'https://github.com/sipeed/picoclaw_fui';
 const String _picoclawOfficialUrl = 'https://picoclaw.io';
@@ -913,6 +915,76 @@ class ConfigPageState extends State<ConfigPage> with WidgetsBindingObserver {
                 },
               ),
               const SizedBox(height: 16),
+
+              // MiniCPM-V Model Management entry (Android only)
+              if (Platform.isAndroid)
+                TVFocusable(
+                  onTap: () async {
+                    final launched = await MiniCPMNativeBridge.openModelManager();
+                    if (!context.mounted) return;
+                    if (!launched) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Failed to open Model Manager.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer.withAlpha(
+                        ((0.1).clamp(0.0, 1.0) * 255).round(),
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withAlpha(
+                          ((0.2).clamp(0.0, 1.0) * 255).round(),
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Remix.download_cloud_2_line,
+                          size: 24,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'MiniCPM-V Model Management',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              Text(
+                                'Download, load, and switch AI models locally',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface.withAlpha(
+                                    ((0.6).clamp(0.0, 1.0) * 255).round(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (Platform.isAndroid) const SizedBox(height: 16),
+
               const Divider(),
               const SizedBox(height: 16),
               Text(

@@ -24,3 +24,4 @@ plugins {
 }
 
 include(":app")
+include(":minicpm_v_demo")
