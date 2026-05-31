@@ -66,6 +66,22 @@
             </intent-filter>
         </activity>
 
+        <!-- MiniCPM-V Chat Activity (migrated from minicpm_v_demo) -->
+        <activity
+            android:name=".MiniCPMChatActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MiniCPMVdemo"
+            android:configChanges="locale|layoutDirection"
+            android:windowSoftInputMode="adjustResize" />
+
+        <!-- MiniCPM-V Model Manager Activity (migrated from minicpm_v_demo) -->
+        <activity
+            android:name=".MiniCPMModelManagerActivity"
+            android:exported="false"
+            android:theme="@style/Theme.MiniCPMVdemo"
+            android:configChanges="locale|layoutDirection"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- PicoClaw 原生前台服务（运行 Go 二进制） -->
         <service
             android:name=".service.PicoClawService"

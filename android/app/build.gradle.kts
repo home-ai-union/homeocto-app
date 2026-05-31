@@ -162,6 +162,16 @@ dependencies {
 
     // Markdown rendering (MiniCPM chat requires)
     implementation("io.noties.markwon:core:4.6.2")
+
+    // === New Activities dependencies (from minicpm_v_demo) ===
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.10.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.activity:activity-ktx:1.8.0")
+    implementation("androidx.coordinatorlayout:coordinatorlayout:1.2.0")
+    implementation("androidx.recyclerview:recyclerview:1.3.2")
 }
 
 // Generate Firebase resources from dart-define

@@ -314,7 +314,7 @@ class PicoClawMethodChannel(
                 // MiniCPM-V Activity launch methods
                 "openModelManager" -> {
                     try {
-                        val intent = Intent(context, com.example.minicpm_v_demo.ModelManagerActivity::class.java)
+                        val intent = Intent(context, MiniCPMModelManagerActivity::class.java)
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                         result.success(true)
@@ -324,7 +324,7 @@ class PicoClawMethodChannel(
                 }
                 "openMiniCPMChat" -> {
                     try {
-                        val intent = Intent(context, com.example.minicpm_v_demo.MainActivity::class.java)
+                        val intent = Intent(context, MiniCPMChatActivity::class.java)
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(intent)
                         result.success(true)

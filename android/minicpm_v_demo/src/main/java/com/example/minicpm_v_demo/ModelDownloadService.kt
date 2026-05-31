@@ -128,7 +128,8 @@ class ModelDownloadService : Service() {
     }
 
     private fun buildNotification(message: String): Notification {
-        val openIntent = Intent(this, ModelManagerActivity::class.java).apply {
+        val openIntent = Intent().apply {
+            setClassName(applicationContext.packageName, "com.homeai.homeocto.MiniCPMModelManagerActivity")
             flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
         val contentPi = PendingIntent.getActivity(

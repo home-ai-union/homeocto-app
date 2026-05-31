@@ -34,7 +34,7 @@ class MainActivity : FlutterActivity() {
             when (call.method) {
                 "openChat" -> {
                     try {
-                        val intent = Intent(this, com.example.minicpm_v_demo.MainActivity::class.java)
+                        val intent = Intent(this, MiniCPMChatActivity::class.java)
                         startActivity(intent)
                         result.success(null)
                     } catch (e: Exception) {
