@@ -35,7 +35,7 @@ jobs:
       artifact_suffix: ${{ steps.vars.outputs.artifact_suffix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -211,7 +211,7 @@ jobs:
       release_base: ${{ steps.vars.outputs.release_base }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -348,7 +348,7 @@ jobs:
       release_base: ${{ steps.vars.outputs.release_base }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -556,7 +556,7 @@ jobs:
       release_base: ${{ steps.vars.outputs.release_base }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -707,7 +707,7 @@ jobs:
       release_tag: ${{ steps.set-vars.outputs.release_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download artifacts
         uses: actions/download-artifact@v8
