@@ -118,7 +118,7 @@ jobs:
           echo "Created and pushed tag: $RELEASE_TAG"
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.6.0
         with:
           distribution: 'temurin'
           java-version: '17'
